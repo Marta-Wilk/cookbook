@@ -49,6 +49,7 @@ class RecipeControllerTest {
     void create_validRecipe_returns201() throws Exception {
         Recipe recipe = new Recipe();
         recipe.setName("Tomato Soup");
+        recipe.setSlug("tomato-soup");
         recipe.setContent("# Tomato Soup\n\n## Ingredients\n- 400g tomatoes");
 
         Recipe saved = new Recipe();
