@@ -30,8 +30,8 @@ export default function RecipeDetailPage() {
     setSaveError(null)
     try {
       const updated = await recipesApi.update(Number(id), form)
-      setRecipe({ ...updated, content: form.content })
-      setForm({ ...updated, content: form.content })
+      setRecipe({ ...updated, content: form.content ?? '' })
+      setForm({ ...updated, content: form.content ?? '' })
       setEditing(false)
     } catch (e: unknown) {
       setSaveError(e instanceof Error ? e.message : 'Save failed')
