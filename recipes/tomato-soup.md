@@ -2,7 +2,7 @@
 
 **Serves:** 4
 **Time:** 30 min
-**Tags:** soup, vegetarian, quick
+**Tags:** soup, tomatoes, quick
 
 ## Ingredients
 

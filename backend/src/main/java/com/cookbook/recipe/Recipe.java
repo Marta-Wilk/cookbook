@@ -26,8 +26,7 @@ public class Recipe {
     @Column(unique = true)
     private String slug;
 
-    @Lob
-    @Column(columnDefinition = "TEXT")
+    @Transient
     private String content;
 
     private String tags;

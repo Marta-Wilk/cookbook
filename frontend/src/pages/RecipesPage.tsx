@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Recipe, recipesApi } from '../api/client'
 
 export default function RecipesPage() {
@@ -25,7 +26,7 @@ export default function RecipesPage() {
         <ul>
           {recipes.map(r => (
             <li key={r.id}>
-              <strong>{r.name}</strong>
+              <Link to={`/recipes/${r.id}`}><strong>{r.name}</strong></Link>
               {r.tags && <span> — {r.tags}</span>}
             </li>
           ))}

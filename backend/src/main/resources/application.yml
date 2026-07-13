@@ -27,6 +27,9 @@ ai:
     api-key: ${ANTHROPIC_API_KEY:stub}
     model: claude-sonnet-5
 
+recipes:
+  dir: ../recipes
+
 logging:
   level:
     com.cookbook: DEBUG
