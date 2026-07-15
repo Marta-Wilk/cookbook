@@ -1,7 +1,9 @@
 package com.cookbook.shoppinglist;
 
 import com.cookbook.mealplan.MealPlan;
+import com.cookbook.mealplan.MealPlanEntry;
 import com.cookbook.mealplan.MealPlanService;
+import com.cookbook.recipe.RecipeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -13,6 +15,7 @@ import java.util.List;
 public class ShoppingListService {
 
     private final MealPlanService mealPlanService;
+    private final RecipeService recipeService;
 
     @Value("${ai.anthropic.api-key:stub}")
     private String apiKey;
@@ -21,7 +24,9 @@ public class ShoppingListService {
         MealPlan plan = mealPlanService.findById(mealPlanId);
 
         List<String> recipeContents = plan.getEntries().stream()
-                .map(e -> e.getRecipe().getContent())
+                .filter(e -> e.getSlotType() == MealPlanEntry.SlotType.RECIPE && e.getRecipeSlug() != null)
+                .map(e -> recipeService.findBySlug(e.getRecipeSlug()).getContent())
+                .filter(c -> c != null)
                 .toList();
 
         if ("stub".equals(apiKey)) {

@@ -6,6 +6,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     ...options,
   })
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
+  if (res.status === 204) return undefined as T
   return res.json() as Promise<T>
 }
 
@@ -19,19 +20,27 @@ export interface Recipe {
   prepTimeMinutes: number
 }
 
+export const MEAL_TYPES = ['BREAKFAST', 'SECOND_BREAKFAST', 'LUNCH', 'DINNER', 'SNACK', 'DESSERT', 'OTHER'] as const
+
 export interface MealPlan {
   id: number
   name: string
-  weekStartDate: string
+  startDate: string
+  durationDays: number
   entries: MealPlanEntry[]
 }
 
 export interface MealPlanEntry {
   id: number
-  recipe: Recipe
-  dayOfWeek: string
-  mealType: 'BREAKFAST' | 'LUNCH' | 'DINNER' | 'SNACK'
-  servings: number
+  dayIndex: number
+  mealType: string
+  mealName?: string
+  slotType: 'RECIPE' | 'EAT_OUT' | 'READY_PRODUCT'
+  recipeSlug?: string
+  recipeName?: string
+  servings?: number
+  productName?: string
+  quantity?: string
 }
 
 export interface ShoppingListResponse {
@@ -52,8 +61,16 @@ export const recipesApi = {
 export const mealPlansApi = {
   getAll: () => request<MealPlan[]>('/meal-plans'),
   getById: (id: number) => request<MealPlan>(`/meal-plans/${id}`),
-  create: (plan: Omit<MealPlan, 'id' | 'entries'>) =>
+  create: (plan: { name: string; startDate: string; durationDays: number }) =>
     request<MealPlan>('/meal-plans', { method: 'POST', body: JSON.stringify(plan) }),
+  update: (id: number, plan: { name: string; startDate: string; durationDays: number }) =>
+    request<MealPlan>(`/meal-plans/${id}`, { method: 'PUT', body: JSON.stringify(plan) }),
+  delete: (id: number) =>
+    request<void>(`/meal-plans/${id}`, { method: 'DELETE' }),
+  addEntry: (planId: number, entry: Omit<MealPlanEntry, 'id'>) =>
+    request<MealPlanEntry>(`/meal-plans/${planId}/entries`, { method: 'POST', body: JSON.stringify(entry) }),
+  deleteEntry: (planId: number, entryId: number) =>
+    request<void>(`/meal-plans/${planId}/entries/${entryId}`, { method: 'DELETE' }),
 }
 
 export const shoppingListApi = {

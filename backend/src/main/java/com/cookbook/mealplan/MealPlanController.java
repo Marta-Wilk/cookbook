@@ -41,4 +41,15 @@ public class MealPlanController {
         service.delete(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/{id}/entries")
+    public ResponseEntity<MealPlanEntry> addEntry(@PathVariable Long id, @RequestBody MealPlanEntry entry) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.addEntry(id, entry));
+    }
+
+    @DeleteMapping("/{planId}/entries/{entryId}")
+    public ResponseEntity<Void> deleteEntry(@PathVariable Long planId, @PathVariable Long entryId) {
+        service.deleteEntry(planId, entryId);
+        return ResponseEntity.noContent().build();
+    }
 }
