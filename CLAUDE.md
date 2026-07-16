@@ -112,6 +112,11 @@ npm run dev
 Set `ANTHROPIC_API_KEY` in your environment.
 Without it the service returns a stub demo response — fine for local dev.
 
+## Pull request rules
+
+- When creating a PR, use the current working branch as the head branch and `main` as the base branch unless the user explicitly specifies otherwise.
+- Never close, merge, or delete a PR unless explicitly instructed.
+
 ## CI / Quality gate
 
 Every PR to `main` triggers `.github/workflows/ci.yml`:
