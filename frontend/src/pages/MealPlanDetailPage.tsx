@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { MEAL_TYPES, MealPlan, MealPlanEntry, Recipe, mealPlansApi, recipesApi } from '../api/client'
+import { MEAL_TYPES, MealPlan, MealPlanEntry, Recipe, mealPlansApi, recipesApi, shoppingListApi } from '../api/client'
 import { SlotType, SlotDraft, nextKey, generatePlanName, formatDayHeader, sortedDrafts, SlotEditor, InsertDivider } from '../components/MealPlanSlotEditor'
 
 function mealLabel(entry: MealPlanEntry): string {
@@ -50,6 +50,10 @@ export default function MealPlanDetailPage({ editMode = false }: { editMode?: bo
   const [originalEntries, setOriginalEntries] = useState<MealPlanEntry[]>([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+
+  // Shopping list generation state
+  const [generating, setGenerating] = useState(false)
+  const [eatOutMessage, setEatOutMessage] = useState('')
 
   useEffect(() => {
     if (!id) return
@@ -112,6 +116,24 @@ export default function MealPlanDetailPage({ editMode = false }: { editMode?: bo
       slotType: slot.slotType,
       ...(slot.slotType === 'RECIPE' && { recipeSlug: slot.recipeSlug || recipes[0]?.slug, servings: slot.servings }),
       ...(slot.slotType === 'READY_PRODUCT' && { productName: slot.productName, quantity: slot.quantity }),
+    }
+  }
+
+  async function handleGenerateShoppingList() {
+    if (!plan) return
+    setGenerating(true)
+    setEatOutMessage('')
+    try {
+      const result = await shoppingListApi.generate(plan.id)
+      if (result) {
+        navigate(`/shopping-list/${result.id}`)
+      } else {
+        setEatOutMessage('For this plan there is no products to buy, you planned to eat out.')
+      }
+    } catch {
+      setEatOutMessage('Failed to generate shopping list. Please try again.')
+    } finally {
+      setGenerating(false)
     }
   }
 
@@ -189,8 +211,15 @@ export default function MealPlanDetailPage({ editMode = false }: { editMode?: bo
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
           <h1 style={{ margin: 0 }}>{plan.name}</h1>
           <button onClick={() => navigate(`/meal-plan/${plan.id}/edit`)}>Edit</button>
+          <button onClick={handleGenerateShoppingList} disabled={generating}>
+            {generating ? 'Generating…' : 'Generate Shopping List'}
+          </button>
           <button onClick={() => navigate('/meal-plan')}>← Back to list</button>
         </div>
+
+        {eatOutMessage && (
+          <p style={{ color: '#666', fontStyle: 'italic', marginBottom: '1rem' }}>{eatOutMessage}</p>
+        )}
 
         {days.map(dayIndex => {
           const entries = sortedEntries(plan.entries.filter(e => e.dayIndex === dayIndex))

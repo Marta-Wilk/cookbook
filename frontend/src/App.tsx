@@ -5,6 +5,7 @@ import MealPlanListPage from './pages/MealPlanListPage'
 import MealPlanCreatePage from './pages/MealPlanCreatePage'
 import MealPlanDetailPage from './pages/MealPlanDetailPage'
 import ShoppingListPage from './pages/ShoppingListPage'
+import ShoppingListDetailPage from './pages/ShoppingListDetailPage'
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
           <Route path="/meal-plan/:id" element={<MealPlanDetailPage />} />
           <Route path="/meal-plan/:id/edit" element={<MealPlanDetailPage editMode />} />
           <Route path="/shopping-list" element={<ShoppingListPage />} />
+          <Route path="/shopping-list/:id" element={<ShoppingListDetailPage />} />
         </Routes>
       </main>
     </BrowserRouter>
