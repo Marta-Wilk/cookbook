@@ -28,7 +28,9 @@ or entering a ready-made product for each day + meal-type slot.
      it should not allow to create plan with backdated start date and for date for which plan already exist.
    - Part 2: have pre generated sections for each day with 3 default meals and possibility to add additional 
      Meal Slots before or after predefined one
-3. **Meal Plan Details** page shows the plan with all its entries; available from 'Meals Plans' list item
+3. **Meal Plan Details** page shows the plan with all its entries; available from 'Meals Plans' list item. The page includes a **Generate Shopping List** button:
+   - On success (HTTP 200): navigates to the generated shopping list view
+   - On HTTP 204: displays the message *"For this plan there is no products to buy, you planned to eat out."* inline on the page
 4. Edit button will open Meal Plan Details page in edit mode to allow users modifications
 5. Delete button - triggers additional pop-up with question 
    > "Are you sure you want to remove this plan? This operation cannot be undone."

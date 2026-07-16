@@ -43,9 +43,22 @@ export interface MealPlanEntry {
   quantity?: string
 }
 
-export interface ShoppingListResponse {
-  items: string[]
-  groupedMarkdown: string
+export interface ShoppingListItem {
+  id: number
+  ingredient: string
+  quantity: string | null
+  category: string | null
+  owned: boolean
+  sortOrder: number
+}
+
+export interface ShoppingList {
+  id: number
+  name: string
+  mealPlanId: number
+  stubMode: boolean
+  createdAt: string
+  items: ShoppingListItem[]
 }
 
 export const recipesApi = {
@@ -75,5 +88,10 @@ export const mealPlansApi = {
 
 export const shoppingListApi = {
   generate: (mealPlanId: number) =>
-    request<ShoppingListResponse>(`/shopping-list/generate/${mealPlanId}`, { method: 'POST' }),
+    request<ShoppingList | undefined>(`/shopping-lists/generate/${mealPlanId}`, { method: 'POST' }),
+  getAll: () => request<ShoppingList[]>('/shopping-lists'),
+  getById: (id: number) => request<ShoppingList>(`/shopping-lists/${id}`),
+  toggleOwned: (listId: number, itemId: number) =>
+    request<ShoppingListItem>(`/shopping-lists/${listId}/items/${itemId}`, { method: 'PATCH' }),
+  delete: (id: number) => request<void>(`/shopping-lists/${id}`, { method: 'DELETE' }),
 }

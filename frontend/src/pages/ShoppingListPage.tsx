@@ -1,60 +1,53 @@
 import { useEffect, useState } from 'react'
-import { MealPlan, ShoppingListResponse, mealPlansApi, shoppingListApi } from '../api/client'
+import { useNavigate } from 'react-router-dom'
+import { ShoppingList, shoppingListApi } from '../api/client'
 
 export default function ShoppingListPage() {
-  const [plans, setPlans] = useState<MealPlan[]>([])
-  const [selectedId, setSelectedId] = useState<number | null>(null)
-  const [result, setResult] = useState<ShoppingListResponse | null>(null)
-  const [loading, setLoading] = useState(false)
+  const navigate = useNavigate()
+  const [lists, setLists] = useState<ShoppingList[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    mealPlansApi.getAll().then(data => {
-      setPlans(data)
-      if (data.length > 0) setSelectedId(data[0].id)
-    })
+    shoppingListApi.getAll()
+      .then(setLists)
+      .finally(() => setLoading(false))
   }, [])
 
-  const generate = async () => {
-    if (!selectedId) return
-    setLoading(true)
-    setResult(null)
-    try {
-      setResult(await shoppingListApi.generate(selectedId))
-    } finally {
-      setLoading(false)
-    }
-  }
+  if (loading) return <p>Loading…</p>
 
   return (
     <div>
-      <h1>Shopping List</h1>
-      <p>Select a meal plan and let AI generate a consolidated shopping list.</p>
+      <h1>Shopping Lists</h1>
 
-      <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '1rem' }}>
-        <select
-          value={selectedId ?? ''}
-          onChange={e => setSelectedId(+e.target.value)}
-          disabled={plans.length === 0}
-        >
-          {plans.length === 0
-            ? <option>No meal plans available</option>
-            : plans.map(p => <option key={p.id} value={p.id}>{p.name}</option>)
-          }
-        </select>
-        <button onClick={generate} disabled={!selectedId || loading}>
-          {loading ? 'Generating…' : 'Generate with AI'}
-        </button>
-      </div>
-
-      {result && (
-        <div>
-          <h2>Shopping List</h2>
-          <ul>
-            {result.items.map((item, i) => <li key={i}>{item}</li>)}
-          </ul>
-          <h3>Grouped by category</h3>
-          <pre style={{ background: '#f5f5f5', padding: '1rem' }}>{result.groupedMarkdown}</pre>
-        </div>
+      {lists.length === 0 ? (
+        <p>No shopping lists yet. Generate one from a meal plan.</p>
+      ) : (
+        <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+          <thead>
+            <tr style={{ borderBottom: '2px solid #ccc', textAlign: 'left' }}>
+              <th style={{ padding: '0.5rem 1rem 0.5rem 0' }}>Name</th>
+              <th style={{ padding: '0.5rem 1rem 0.5rem 0' }}>Created</th>
+              <th style={{ padding: '0.5rem 1rem 0.5rem 0' }}>Items</th>
+            </tr>
+          </thead>
+          <tbody>
+            {lists.map(list => (
+              <tr
+                key={list.id}
+                onClick={() => navigate(`/shopping-list/${list.id}`)}
+                style={{ borderBottom: '1px solid #eee', cursor: 'pointer' }}
+              >
+                <td style={{ padding: '0.5rem 1rem 0.5rem 0' }}>{list.name}</td>
+                <td style={{ padding: '0.5rem 1rem 0.5rem 0', color: '#666' }}>
+                  {new Date(list.createdAt).toLocaleDateString()}
+                </td>
+                <td style={{ padding: '0.5rem 1rem 0.5rem 0', color: '#666' }}>
+                  {list.items.length}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
     </div>
   )
