@@ -10,8 +10,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +21,7 @@ public class ShoppingListService {
     private final RecipeService recipeService;
     private final ShoppingListRepository repository;
     private final ShoppingListItemRepository itemRepository;
+    private final AnthropicClient anthropicClient;
 
     @Value("${ai.anthropic.api-key:stub}")
     private String apiKey;
@@ -40,8 +41,7 @@ public class ShoppingListService {
             return persistStub(plan, shoppableEntries);
         }
 
-        // TODO: replace with real Anthropic API call (see specifications/features/F003-ai-shopping-list.md)
-        return persistStub(plan, shoppableEntries);
+        return persistFromAi(plan, shoppableEntries);
     }
 
     public List<ShoppingList> findAll() {
@@ -66,6 +66,73 @@ public class ShoppingListService {
     public void delete(Long id) {
         findById(id);
         repository.deleteById(id);
+    }
+
+    private ShoppingList persistFromAi(MealPlan plan, List<MealPlanEntry> entries) {
+        List<MealPlanEntry> recipeEntries = entries.stream()
+                .filter(e -> e.getSlotType() == MealPlanEntry.SlotType.RECIPE)
+                .toList();
+        List<MealPlanEntry> readyProducts = entries.stream()
+                .filter(e -> e.getSlotType() == MealPlanEntry.SlotType.READY_PRODUCT)
+                .toList();
+
+        ShoppingList list = new ShoppingList();
+        list.setName(plan.getName());
+        list.setMealPlanId(plan.getId());
+        list.setStubMode(false);
+
+        int sortOrder = 0;
+
+        if (!recipeEntries.isEmpty()) {
+            String userMessage = buildUserMessage(recipeEntries);
+            for (AnthropicClient.ItemDto dto : anthropicClient.generateItems(userMessage)) {
+                ShoppingListItem item = new ShoppingListItem();
+                item.setShoppingList(list);
+                item.setIngredient(dto.ingredient());
+                item.setQuantity(dto.quantity());
+                item.setCategory(dto.category());
+                item.setSortOrder(sortOrder++);
+                list.getItems().add(item);
+            }
+        }
+
+        for (MealPlanEntry entry : readyProducts) {
+            ShoppingListItem item = new ShoppingListItem();
+            item.setShoppingList(list);
+            item.setIngredient(entry.getProductName());
+            item.setQuantity(entry.getQuantity());
+            item.setSortOrder(sortOrder++);
+            list.getItems().add(item);
+        }
+
+        return repository.save(list);
+    }
+
+    private String buildUserMessage(List<MealPlanEntry> recipeEntries) {
+        Map<String, Long> countBySlug = recipeEntries.stream()
+                .filter(e -> e.getRecipeSlug() != null)
+                .collect(Collectors.groupingBy(MealPlanEntry::getRecipeSlug, Collectors.counting()));
+
+        StringBuilder sb = new StringBuilder("Generate a shopping list for the following recipes:\n");
+        Set<String> seen = new LinkedHashSet<>();
+
+        for (MealPlanEntry entry : recipeEntries) {
+            if (entry.getRecipeSlug() == null || !seen.add(entry.getRecipeSlug())) continue;
+            try {
+                String content = recipeService.findBySlug(entry.getRecipeSlug()).getContent();
+                List<String> ingredients = extractIngredients(content);
+                if (ingredients.isEmpty()) continue;
+
+                long count = countBySlug.get(entry.getRecipeSlug());
+                String name = entry.getRecipeName() != null ? entry.getRecipeName() : entry.getRecipeSlug();
+                String serves = entry.getServings() != null ? String.valueOf(entry.getServings()) : "?";
+                String times = count > 1 ? ", " + count + "x this week" : "";
+                sb.append("\n[RECIPE: ").append(name).append(" (serves ").append(serves).append(times).append(")]\n");
+                ingredients.forEach(i -> sb.append("- ").append(i).append("\n"));
+            } catch (ResponseStatusException ignored) {}
+        }
+
+        return sb.toString();
     }
 
     private ShoppingList persistStub(MealPlan plan, List<MealPlanEntry> entries) {

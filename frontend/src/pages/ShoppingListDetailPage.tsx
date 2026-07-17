@@ -6,6 +6,8 @@ interface LocalItem extends ShoppingListItem {
   ownedLocal: boolean
 }
 
+const CATEGORY_ORDER = ['Produce', 'Meat & Fish', 'Dairy', 'Pantry', 'Frozen', 'Other']
+
 export default function ShoppingListDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -64,6 +66,18 @@ export default function ShoppingListDetailPage() {
 
   const isDirty = items.some(it => it.ownedLocal !== it.owned)
 
+  const groups = items.reduce<Record<string, { item: LocalItem; index: number }[]>>((acc, item, i) => {
+    const cat = item.category ?? 'Other'
+    if (!acc[cat]) acc[cat] = []
+    acc[cat].push({ item, index: i })
+    return acc
+  }, {})
+
+  const sortedCategories = [
+    ...CATEGORY_ORDER.filter(c => groups[c]),
+    ...Object.keys(groups).filter(c => !CATEGORY_ORDER.includes(c)),
+  ]
+
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
@@ -93,26 +107,38 @@ export default function ShoppingListDetailPage() {
       {items.length === 0 ? (
         <p>No items in this shopping list.</p>
       ) : (
-        <ul style={{ listStyle: 'none', padding: 0 }}>
-          {items.map((item, i) => (
-            <li
-              key={item.id}
-              style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.4rem' }}
-            >
-              <input
-                type="checkbox"
-                checked={item.ownedLocal}
-                onChange={() => toggleOwned(i)}
-              />
-              <span style={{
-                textDecoration: item.ownedLocal ? 'line-through' : 'none',
-                color: item.ownedLocal ? '#999' : 'inherit',
-              }}>
-                {item.ingredient}
-              </span>
-            </li>
-          ))}
-        </ul>
+        sortedCategories.map(category => (
+          <div key={category} style={{ marginBottom: '1.5rem' }}>
+            <h3 style={{ margin: '0 0 0.5rem', borderBottom: '1px solid #ddd', paddingBottom: '0.25rem' }}>
+              {category}
+            </h3>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+              {groups[category].map(({ item, index }) => (
+                <li
+                  key={item.id}
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.4rem' }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={item.ownedLocal}
+                    onChange={() => toggleOwned(index)}
+                  />
+                  <span style={{
+                    textDecoration: item.ownedLocal ? 'line-through' : 'none',
+                    color: item.ownedLocal ? '#999' : 'inherit',
+                  }}>
+                    {item.ingredient}
+                    {item.quantity && (
+                      <span style={{ color: item.ownedLocal ? '#bbb' : '#666', marginLeft: '0.5rem' }}>
+                        {item.quantity}
+                      </span>
+                    )}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))
       )}
     </div>
   )
