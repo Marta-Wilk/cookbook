@@ -1,4 +1,5 @@
 import { MEAL_TYPES, Recipe } from '../api/client'
+import RecipePicker from './RecipePicker'
 import './MealPlanSlotEditor.css'
 
 export type SlotType = 'RECIPE' | 'EAT_OUT' | 'READY_PRODUCT'
@@ -78,15 +79,11 @@ export function SlotEditor({ slot, recipes, onChange, onRemove }: {
 
       {slot.slotType === 'RECIPE' && (
         <>
-          <select
-            value={slot.recipeSlug || recipes[0]?.slug || ''}
-            onChange={e => onChange({ recipeSlug: e.target.value })}
-          >
-            {recipes.length === 0
-              ? <option value="">No recipes available</option>
-              : recipes.map(r => <option key={r.slug} value={r.slug}>{r.name}</option>)
-            }
-          </select>
+          <RecipePicker
+            recipes={recipes}
+            value={slot.recipeSlug}
+            onChange={slug => onChange({ recipeSlug: slug })}
+          />
           <label className="slot-editor__servings-label">
             Servings
             <input

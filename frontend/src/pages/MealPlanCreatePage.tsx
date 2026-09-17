@@ -6,14 +6,14 @@ import './MealPlanCreatePage.css'
 
 type DayDraft = { dayIndex: number; slots: SlotDraft[] }
 
-function makeSlot(mealType: string, firstSlug: string): SlotDraft {
-  return { key: nextKey(), dayIndex: 0, mealType, mealName: '', slotType: 'RECIPE', recipeSlug: firstSlug, servings: 1, productName: '', quantity: '' }
+function makeSlot(mealType: string): SlotDraft {
+  return { key: nextKey(), dayIndex: 0, mealType, mealName: '', slotType: 'RECIPE', recipeSlug: '', servings: 1, productName: '', quantity: '' }
 }
 
-function makeDays(durationDays: number, firstSlug: string): DayDraft[] {
+function makeDays(durationDays: number): DayDraft[] {
   return Array.from({ length: durationDays }, (_, i) => ({
     dayIndex: i + 1,
-    slots: [makeSlot('BREAKFAST', firstSlug), makeSlot('LUNCH', firstSlug), makeSlot('DINNER', firstSlug)],
+    slots: [makeSlot('BREAKFAST'), makeSlot('LUNCH'), makeSlot('DINNER')],
   }))
 }
 
@@ -68,7 +68,7 @@ export default function MealPlanCreatePage() {
       } else {
         await mealPlansApi.update(createdPlanId, { name, startDate, durationDays })
       }
-      setDays(makeDays(durationDays, recipes[0]?.slug ?? ''))
+      setDays(makeDays(durationDays))
       setStep(2)
     } catch (e) {
       const msg = e instanceof Error ? e.message : ''
@@ -97,7 +97,7 @@ export default function MealPlanCreatePage() {
     const day = days.find(d => d.dayIndex === dayIndex)!
     const used = new Set(day.slots.map(s => s.mealType))
     const mealType = MEAL_TYPES.find(t => !used.has(t)) ?? 'OTHER'
-    const slot = makeSlot(mealType, recipes[0]?.slug ?? '')
+    const slot = makeSlot(mealType)
     setDays(prev => prev.map(d => {
       if (d.dayIndex !== dayIndex) return d
       const slots = [...d.slots]

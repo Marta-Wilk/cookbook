@@ -42,6 +42,22 @@ the application. The database holds only a metadata index for querying.
 Recipe `content` (full Markdown) is never stored in the DB — it is read from
 `recipes/<slug>.md` at request time and included in the API response.
 
+## Recipe list search (frontend)
+
+The recipes list page provides a search bar allowing users to filter the displayed recipes without any server round-trip. All filtering is client-side over the data already returned by `GET /api/recipes`.
+
+### Acceptance criteria
+
+9. When at least one recipe exists, a search bar is displayed above the recipe list
+10. The search bar contains two radio buttons — **By name** (selected by default) and **By tag** — and a text input
+11. As the user types, the displayed list updates in real time to show only matching recipes
+12. In **By name** mode: a recipe is included if its `name` contains the query string (case-insensitive substring match)
+13. In **By tag** mode: a recipe is included if any of its individual tags contains the query string (tags are split on `,`, trimmed, matched case-insensitively)
+14. A blank or whitespace-only query matches all recipes (full list shown)
+15. When the query is non-empty and no recipes match, the message **"No recipes match your search."** is shown in place of the list
+16. When no recipes exist at all, the search bar is not rendered — only the **"No recipes yet. Add your first one!"** message is shown
+17. Switching between modes while a query is typed re-filters immediately; the query is not cleared
+
 ## Holdout tests (CI gate)
 
 - `GET /api/recipes` returns empty list when no recipes exist → HTTP 200, body `[]`
@@ -51,3 +67,4 @@ Recipe `content` (full Markdown) is never stored in the DB — it is read from
 - Duplicate slug on second create → HTTP 409
 - After `POST`, file `recipes/<slug>.md` exists on disk and contains the submitted content
 - After `DELETE`, file `recipes/<slug>.md` is removed from disk
+- Frontend TypeScript build passes after adding search state and JSX (`tsc && vite build` green)

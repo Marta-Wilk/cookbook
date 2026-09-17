@@ -101,7 +101,7 @@ export default function MealPlanDetailPage({ editMode = false }: { editMode?: bo
       mealType,
       mealName: '',
       slotType: 'RECIPE',
-      recipeSlug: recipes[0]?.slug ?? '',
+      recipeSlug: '',
       servings: 1,
       productName: '',
       quantity: '',
