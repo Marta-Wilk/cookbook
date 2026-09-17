@@ -39,6 +39,15 @@ or entering a ready-made product for each day + meal-type slot.
 6. Each **Meal Slot** should be displayed with `MealType` name and `mealName` if mealType = OTHER. 
    Servings, recipe information, product name and quantity presence depends on Slot Type. 
    Meal Slot have button to remove it.
+7. When selecting a recipe for a **RECIPE**-type slot, the slot displays a **Recipe Picker**:
+   - The picker shows a text input; when creating a new slot the input is empty, when editing an existing slot the input is pre-filled with the name of the previously selected recipe
+   - The recipe list opens when the user edits the input and closes when a recipe is selected; at all other times the list is hidden
+   - When visible, the list has a fixed maximum visible height of approximately 5 rows; recipes beyond that are accessible by scrolling
+   - The list filters in real time to show recipes whose name contains the input text (case-insensitive substring match); an empty input shows all recipes
+   - Selecting a recipe from the list fills the input with that recipe's name
+   - The currently selected recipe is visually highlighted in the list
+   - When no recipes match the filter, the picker shows *"No recipes match"*
+   - When the recipe library is empty, the picker shows *"No recipes available"*
 
 ## Meal types
 
@@ -89,6 +98,14 @@ Each entry has a `slotType` which determines which additional fields are require
 
 ## Holdout tests (CI gate)
 
+- `RecipePicker` hides the recipe list on initial render
+- `RecipePicker` shows the recipe list when the user types in the input
+- `RecipePicker` hides the recipe list after a recipe is selected
+- `RecipePicker` pre-fills the filter input with the selected recipe name when a `value` slug is provided
+- `RecipePicker` filters the list by name as the user types (case-insensitive substring match)
+- `RecipePicker` shows *"No recipes match"* when the filter matches nothing
+- `RecipePicker` shows *"No recipes available"* when the recipes array is empty
+- Frontend TypeScript build passes after adding `RecipePicker` (`tsc && vite build` green)
 - Create plan → GET returns it with `entries: []`
 - `durationDays` = 0 or 8 → HTTP 400
 - Add RECIPE entry with unknown recipeSlug → HTTP 404
