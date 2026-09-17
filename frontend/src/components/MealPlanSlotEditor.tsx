@@ -1,4 +1,5 @@
 import { MEAL_TYPES, Recipe } from '../api/client'
+import './MealPlanSlotEditor.css'
 
 export type SlotType = 'RECIPE' | 'EAT_OUT' | 'READY_PRODUCT'
 
@@ -50,7 +51,7 @@ export function SlotEditor({ slot, recipes, onChange, onRemove }: {
   onRemove: () => void
 }) {
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center', padding: '0.4rem 0.6rem', border: '1px solid #ddd', borderRadius: '4px', background: '#fafafa' }}>
+    <div className="slot-editor">
       <select value={slot.mealType} onChange={e => onChange({ mealType: e.target.value })}>
         {MEAL_TYPES.map(t => <option key={t} value={t}>{t.replace(/_/g, ' ')}</option>)}
       </select>
@@ -60,7 +61,7 @@ export function SlotEditor({ slot, recipes, onChange, onRemove }: {
           placeholder="Meal name"
           value={slot.mealName}
           onChange={e => onChange({ mealName: e.target.value })}
-          style={{ width: '120px' }}
+          className="slot-editor__input--meal-name"
         />
       )}
 
@@ -86,12 +87,12 @@ export function SlotEditor({ slot, recipes, onChange, onRemove }: {
               : recipes.map(r => <option key={r.slug} value={r.slug}>{r.name}</option>)
             }
           </select>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+          <label className="slot-editor__servings-label">
             Servings
             <input
               type="number" min={1} value={slot.servings}
               onChange={e => onChange({ servings: +e.target.value })}
-              style={{ width: '4rem' }}
+              className="slot-editor__input--servings"
             />
           </label>
         </>
@@ -103,32 +104,34 @@ export function SlotEditor({ slot, recipes, onChange, onRemove }: {
             placeholder="Product name"
             value={slot.productName}
             onChange={e => onChange({ productName: e.target.value })}
-            style={{ width: '130px' }}
+            className="slot-editor__input--product-name"
           />
           <input
             placeholder="Quantity"
             value={slot.quantity}
             onChange={e => onChange({ quantity: e.target.value })}
-            style={{ width: '90px' }}
+            className="slot-editor__input--quantity"
           />
         </>
       )}
 
-      <button onClick={onRemove} title="Remove slot" style={{ marginLeft: 'auto' }}>×</button>
+      <button className="btn btn--ghost slot-editor__remove" onClick={onRemove} title="Remove slot">×</button>
     </div>
   )
 }
 
 export function InsertDivider({ onClick }: { onClick: () => void }) {
   return (
-    <div style={{ textAlign: 'center', margin: '2px 0' }}>
+    <div className="insert-divider">
+      <hr className="insert-divider__line" />
       <button
+        className="btn btn--ghost insert-divider__btn"
         onClick={onClick}
         title="Add slot here"
-        style={{ fontSize: '0.7rem', padding: '0 6px', opacity: 0.5, border: '1px dashed #aaa', background: 'none', cursor: 'pointer' }}
       >
-        + add slot here
+        + add slot
       </button>
+      <hr className="insert-divider__line" />
     </div>
   )
 }

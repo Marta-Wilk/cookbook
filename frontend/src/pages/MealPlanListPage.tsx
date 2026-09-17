@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MealPlan, mealPlansApi } from '../api/client'
+import './MealPlanListPage.css'
 
 export default function MealPlanListPage() {
   const [plans, setPlans] = useState<MealPlan[]>([])
@@ -23,34 +24,34 @@ export default function MealPlanListPage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-        <h1 style={{ margin: 0 }}>Meal Plans</h1>
-        <button onClick={() => navigate('/meal-plan/new')}>Create New Plan</button>
+      <div className="page-header">
+        <h1 className="page-header__title">Meal Plans</h1>
+        <div className="page-header__actions">
+          <button className="btn btn--primary" onClick={() => navigate('/meal-plan/new')}>
+            Create New Plan
+          </button>
+        </div>
       </div>
 
       {plans.length === 0 ? (
-        <p>No meal plans yet.</p>
+        <p className="empty-state">No meal plans yet.</p>
       ) : (
-        <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+        <table className="data-table">
           <thead>
             <tr>
-              <th style={{ textAlign: 'left', padding: '0.5rem 1rem 0.5rem 0', borderBottom: '2px solid #ccc' }}>
-                Name
-              </th>
-              <th style={{ padding: '0.5rem 0', borderBottom: '2px solid #ccc' }}></th>
+              <th>Name</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
             {plans.map(plan => (
               <tr key={plan.id}>
-                <td style={{ padding: '0.5rem 1rem 0.5rem 0', borderBottom: '1px solid #eee' }}>
-                  {plan.name}
-                </td>
-                <td style={{ padding: '0.5rem 0', borderBottom: '1px solid #eee' }}>
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button onClick={() => navigate(`/meal-plan/${plan.id}`)}>Open</button>
-                    <button onClick={() => navigate(`/meal-plan/${plan.id}/edit`)}>Edit</button>
-                    <button onClick={() => handleDelete(plan)}>Delete</button>
+                <td className="list-item-name">{plan.name}</td>
+                <td>
+                  <div className="page-header__actions plan-row-actions">
+                    <button className="btn btn--secondary" onClick={() => navigate(`/meal-plan/${plan.id}`)}>Open</button>
+                    <button className="btn btn--secondary" onClick={() => navigate(`/meal-plan/${plan.id}/edit`)}>Edit</button>
+                    <button className="btn btn--danger" onClick={() => handleDelete(plan)}>Delete</button>
                   </div>
                 </td>
               </tr>

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MEAL_TYPES, MealPlan, MealPlanEntry, Recipe, mealPlansApi, recipesApi } from '../api/client'
 import { SlotDraft, nextKey, generatePlanName, formatDayHeader, SlotEditor, InsertDivider } from '../components/MealPlanSlotEditor'
+import './MealPlanCreatePage.css'
 
 type DayDraft = { dayIndex: number; slots: SlotDraft[] }
 
@@ -130,12 +131,12 @@ export default function MealPlanCreatePage() {
     }
   }
 
-  // --- Part 1 ---
+  // --- Step 1 ---
   if (step === 1) {
     return (
       <div>
         <h1>Create New Plan</h1>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxWidth: '360px' }}>
+        <div className="create-form">
           <label>
             Start date{' '}
             <input
@@ -154,37 +155,35 @@ export default function MealPlanCreatePage() {
             </select>
           </label>
           {startDate && (
-            <p style={{ margin: 0, color: '#555' }}>
+            <p className="plan-preview-name">
               Plan name: <strong>{generatePlanName(startDate, durationDays)}</strong>
             </p>
           )}
-          {error && <p style={{ color: 'red', margin: 0 }}>{error}</p>}
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button onClick={handleConfirm} disabled={confirming}>
+          {error && <p className="error-text">{error}</p>}
+          <div className="create-form-actions">
+            <button className="btn btn--primary" onClick={handleConfirm} disabled={confirming}>
               {confirming ? 'Saving…' : 'Confirm'}
             </button>
-            <button onClick={() => navigate('/meal-plan')} disabled={confirming}>Cancel</button>
+            <button className="btn btn--secondary" onClick={() => navigate('/meal-plan')} disabled={confirming}>Cancel</button>
           </div>
         </div>
       </div>
     )
   }
 
-  // --- Part 2 ---
+  // --- Step 2 ---
   return (
     <div>
       <h1>Create New Plan</h1>
-      <p style={{ marginTop: 0, color: '#555' }}>
+      <p className="plan-preview-name">
         <strong>{generatePlanName(startDate, durationDays)}</strong>
         {' — '}
-        <button style={{ fontSize: '0.85rem' }} onClick={() => setStep(1)}>← Change dates</button>
+        <button className="btn btn--ghost btn--sm" onClick={() => setStep(1)}>← Change dates</button>
       </p>
 
       {days.map(day => (
-        <div key={day.dayIndex} style={{ marginBottom: '1.5rem' }}>
-          <h3 style={{ margin: '0 0 0.4rem' }}>
-            Day {day.dayIndex} — {formatDayHeader(startDate, day.dayIndex)}
-          </h3>
+        <div key={day.dayIndex} className="create-day-block">
+          <h3>Day {day.dayIndex} — {formatDayHeader(startDate, day.dayIndex)}</h3>
 
           <InsertDivider onClick={() => insertSlotAt(day.dayIndex, 0)} />
 
@@ -202,13 +201,13 @@ export default function MealPlanCreatePage() {
         </div>
       ))}
 
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {error && <p className="error-text">{error}</p>}
 
-      <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-        <button onClick={handleSubmit} disabled={submitting}>
+      <div className="create-form-actions">
+        <button className="btn btn--primary" onClick={handleSubmit} disabled={submitting}>
           {submitting ? 'Creating…' : 'Create Plan'}
         </button>
-        <button onClick={() => navigate('/meal-plan')} disabled={submitting}>Cancel</button>
+        <button className="btn btn--secondary" onClick={() => navigate('/meal-plan')} disabled={submitting}>Cancel</button>
       </div>
     </div>
   )

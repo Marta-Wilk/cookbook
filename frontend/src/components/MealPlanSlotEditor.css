@@ -1,0 +1,59 @@
+.slot-editor {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--paper);
+  border: 1.5px solid var(--tan);
+  border-radius: var(--radius);
+}
+
+.slot-editor select,
+.slot-editor input {
+  font-size: 0.875rem;
+}
+
+.slot-editor__input--meal-name    { width: 120px; }
+.slot-editor__input--servings     { width: 4rem; }
+.slot-editor__input--product-name { width: 130px; }
+.slot-editor__input--quantity     { width: 90px; }
+
+.slot-editor__servings-label {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.875rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.slot-editor__remove {
+  margin-left: auto;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0.2rem 0.5rem;
+}
+
+.insert-divider {
+  display: flex;
+  align-items: center;
+  margin: 3px 0;
+  gap: 0.5rem;
+}
+
+.insert-divider__line {
+  flex: 1;
+  border: none;
+  border-top: 1px dashed var(--tan);
+}
+
+.insert-divider__btn {
+  font-size: 0.75rem;
+  padding: 0.1rem 0.5rem;
+  opacity: 0.6;
+  white-space: nowrap;
+}
+.insert-divider__btn:hover {
+  opacity: 1;
+}

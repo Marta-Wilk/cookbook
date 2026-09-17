@@ -1,0 +1,29 @@
+.create-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 360px;
+}
+
+.create-form-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.plan-preview-name {
+  margin-top: 0;
+  color: var(--muted);
+}
+
+.btn--sm {
+  font-size: 0.85rem;
+  padding: 0.2rem 0.6rem;
+}
+
+.create-day-block {
+  margin-bottom: 1.5rem;
+}
+
+.create-day-block h3 {
+  margin: 0 0 0.4rem;
+}
