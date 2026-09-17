@@ -88,6 +88,11 @@ src/
 
 **State:** local `useState` + `useEffect` is sufficient for now (no Redux, no React Query yet)
 
+**Styling rules — mandatory:**
+- All styling must be placed in CSS files. Never use inline `style={{}}` attributes in TSX.
+- CSS is organised in a hierarchy: `src/index.css` for global/shared styles, `src/pages/<Page>.css` for page-specific styles, `src/components/<Component>.css` for component-specific styles.
+- Every TSX file that needs styling imports its own CSS file. Shared utility classes live in `index.css`.
+
 ## Running locally
 
 ### Backend

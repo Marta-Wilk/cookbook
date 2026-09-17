@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { MEAL_TYPES, MealPlan, MealPlanEntry, Recipe, mealPlansApi, recipesApi, shoppingListApi } from '../api/client'
 import { SlotType, SlotDraft, nextKey, generatePlanName, formatDayHeader, sortedDrafts, SlotEditor, InsertDivider } from '../components/MealPlanSlotEditor'
+import './MealPlanDetailPage.css'
 
 function mealLabel(entry: MealPlanEntry): string {
   return entry.mealType === 'OTHER'
@@ -12,7 +13,7 @@ function mealLabel(entry: MealPlanEntry): string {
 function slotDetail(entry: MealPlanEntry): string {
   if (entry.slotType === 'EAT_OUT') return 'Eat out'
   if (entry.slotType === 'READY_PRODUCT') return `${entry.productName} (${entry.quantity})`
-  return `${entry.recipeName ?? entry.recipeSlug} ×${entry.servings}`
+  return `${entry.recipeName ?? entry.recipeSlug} · ${entry.servings} ${entry.servings === 1 ? 'serving' : 'servings'}`
 }
 
 function sortedEntries(entries: MealPlanEntry[]): MealPlanEntry[] {
@@ -62,7 +63,6 @@ export default function MealPlanDetailPage({ editMode = false }: { editMode?: bo
       .finally(() => setLoading(false))
   }, [id])
 
-  // Initialise edit drafts whenever edit mode is entered (or plan reloads in edit mode)
   useEffect(() => {
     if (!plan || !editMode) return
     setSaving(false)
@@ -147,7 +147,6 @@ export default function MealPlanDetailPage({ editMode = false }: { editMode?: bo
     setSaving(true)
     setError('')
     try {
-      // Update plan header first so overlap check runs before touching entries
       if (draftStartDate !== plan.startDate || draftDuration !== plan.durationDays) {
         await mealPlansApi.update(plan.id, {
           name: generatePlanName(draftStartDate, draftDuration),
@@ -159,7 +158,6 @@ export default function MealPlanDetailPage({ editMode = false }: { editMode?: bo
       const toDeleteIds = new Set<number>()
       const toPost: SlotDraft[] = []
 
-      // Entries to delete: removed, out-of-range, or changed
       for (const orig of originalEntries) {
         const current = draftSlots.find(s => s.id === orig.id)
         if (!current || current.dayIndex > draftDuration || isDifferent(current, orig)) {
@@ -167,7 +165,6 @@ export default function MealPlanDetailPage({ editMode = false }: { editMode?: bo
         }
       }
 
-      // Entries to post: new ones, or originals that changed
       for (const slot of draftSlots.filter(s => s.dayIndex <= draftDuration)) {
         if (!slot.id) {
           toPost.push(slot)
@@ -179,7 +176,6 @@ export default function MealPlanDetailPage({ editMode = false }: { editMode?: bo
         }
       }
 
-      // Delete first to free unique-constraint slots, then post
       for (const id of toDeleteIds) {
         await mealPlansApi.deleteEntry(plan.id, id)
       }
@@ -187,7 +183,6 @@ export default function MealPlanDetailPage({ editMode = false }: { editMode?: bo
         await mealPlansApi.addEntry(plan.id, buildEntry(slot))
       }
 
-      // Re-fetch so the view mode shows fresh data in the same component instance
       const updated = await mealPlansApi.getById(plan.id)
       setPlan(updated)
       navigate(`/meal-plan/${plan.id}`)
@@ -208,38 +203,39 @@ export default function MealPlanDetailPage({ editMode = false }: { editMode?: bo
     const days = Array.from({ length: plan.durationDays }, (_, i) => i + 1)
     return (
       <div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-          <h1 style={{ margin: 0 }}>{plan.name}</h1>
-          <button onClick={() => navigate(`/meal-plan/${plan.id}/edit`)}>Edit</button>
-          <button onClick={handleGenerateShoppingList} disabled={generating}>
-            {generating ? 'Generating…' : 'Generate Shopping List'}
-          </button>
-          <button onClick={() => navigate('/meal-plan')}>← Back to list</button>
+        <div className="page-header">
+          <h1 className="page-header__title">{plan.name}</h1>
+          <div className="page-header__actions">
+            <button className="btn btn--secondary" onClick={() => navigate(`/meal-plan/${plan.id}/edit`)}>Edit</button>
+            <button className="btn btn--primary" onClick={handleGenerateShoppingList} disabled={generating}>
+              {generating ? 'Generating…' : 'Generate Shopping List'}
+            </button>
+            <button className="btn btn--ghost" onClick={() => navigate('/meal-plan')}>← Back to list</button>
+          </div>
         </div>
 
         {eatOutMessage && (
-          <p style={{ color: '#666', fontStyle: 'italic', marginBottom: '1rem' }}>{eatOutMessage}</p>
+          <p className="eat-out-message">{eatOutMessage}</p>
         )}
 
         {days.map(dayIndex => {
           const entries = sortedEntries(plan.entries.filter(e => e.dayIndex === dayIndex))
           return (
-            <div key={dayIndex} style={{ marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid #eee' }}>
-              <h3 style={{ margin: '0 0 0.6rem' }}>
+            <div key={dayIndex} className="day-card">
+              <div className="day-card__header">
                 Day {dayIndex} — {formatDayHeader(plan.startDate, dayIndex)}
-              </h3>
-              {entries.length === 0 && (
-                <p style={{ color: '#999', margin: '0.25rem 0' }}>No meals planned.</p>
-              )}
-              {entries.map(entry => (
-                <div
-                  key={entry.id}
-                  style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem', marginBottom: '0.3rem' }}
-                >
-                  <strong style={{ minWidth: '160px', flexShrink: 0 }}>{mealLabel(entry)}</strong>
-                  <span style={{ color: '#555' }}>{slotDetail(entry)}</span>
-                </div>
-              ))}
+              </div>
+              <div className="day-card__body">
+                {entries.length === 0 && (
+                  <p className="day-card__empty">No meals planned.</p>
+                )}
+                {entries.map(entry => (
+                  <div key={entry.id} className="meal-entry">
+                    <span className="meal-entry__label">{mealLabel(entry)}</span>
+                    <span className="meal-entry__detail">{slotDetail(entry)}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           )
         })}
@@ -252,59 +248,61 @@ export default function MealPlanDetailPage({ editMode = false }: { editMode?: bo
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-        <h1 style={{ margin: 0 }}>{generatePlanName(draftStartDate, draftDuration)}</h1>
-        <label>
-          Start date{' '}
-          <input
-            type="date"
-            value={draftStartDate}
-            min={plan.startDate < today ? plan.startDate : today}
-            onChange={e => setDraftStartDate(e.target.value)}
-          />
-        </label>
-        <label>
-          Duration{' '}
-          <select value={draftDuration} onChange={e => setDraftDuration(+e.target.value)}>
-            {[1, 2, 3, 4, 5, 6, 7].map(n => (
-              <option key={n} value={n}>{n} day{n > 1 ? 's' : ''}</option>
-            ))}
-          </select>
-        </label>
+      <div className="page-header">
+        <h1 className="page-header__title">{generatePlanName(draftStartDate, draftDuration)}</h1>
+        <div className="page-header__actions">
+          <label className="edit-date-label">
+            Start date
+            <input
+              type="date"
+              value={draftStartDate}
+              min={plan.startDate < today ? plan.startDate : today}
+              onChange={e => setDraftStartDate(e.target.value)}
+            />
+          </label>
+          <label className="edit-date-label">
+            Duration
+            <select value={draftDuration} onChange={e => setDraftDuration(+e.target.value)}>
+              {[1, 2, 3, 4, 5, 6, 7].map(n => (
+                <option key={n} value={n}>{n} day{n > 1 ? 's' : ''}</option>
+              ))}
+            </select>
+          </label>
+        </div>
       </div>
 
       {editDays.map(dayIndex => {
         const slots = sortedDrafts(draftSlots.filter(s => s.dayIndex === dayIndex))
         return (
-          <div key={dayIndex} style={{ marginBottom: '1.5rem' }}>
-            <h3 style={{ margin: '0 0 0.4rem' }}>
+          <div key={dayIndex} className="day-card">
+            <div className="day-card__header">
               Day {dayIndex} — {formatDayHeader(draftStartDate, dayIndex)}
-            </h3>
-
-            <InsertDivider onClick={() => addDraftSlot(dayIndex)} />
-
-            {slots.map(slot => (
-              <div key={slot.key}>
-                <SlotEditor
-                  slot={slot}
-                  recipes={recipes}
-                  onChange={patch => updateDraftSlot(slot.key, patch)}
-                  onRemove={() => removeDraftSlot(slot.key)}
-                />
-                <InsertDivider onClick={() => addDraftSlot(dayIndex)} />
-              </div>
-            ))}
+            </div>
+            <div className="day-card__body">
+              <InsertDivider onClick={() => addDraftSlot(dayIndex)} />
+              {slots.map(slot => (
+                <div key={slot.key}>
+                  <SlotEditor
+                    slot={slot}
+                    recipes={recipes}
+                    onChange={patch => updateDraftSlot(slot.key, patch)}
+                    onRemove={() => removeDraftSlot(slot.key)}
+                  />
+                  <InsertDivider onClick={() => addDraftSlot(dayIndex)} />
+                </div>
+              ))}
+            </div>
           </div>
         )
       })}
 
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {error && <p className="error-text">{error}</p>}
 
-      <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-        <button onClick={handleSave} disabled={saving}>
+      <div className="page-header__actions edit-save-actions">
+        <button className="btn btn--primary" onClick={handleSave} disabled={saving}>
           {saving ? 'Saving…' : 'Save changes'}
         </button>
-        <button onClick={() => navigate(`/meal-plan/${plan.id}`)} disabled={saving}>
+        <button className="btn btn--secondary" onClick={() => navigate(`/meal-plan/${plan.id}`)} disabled={saving}>
           Cancel
         </button>
       </div>

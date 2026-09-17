@@ -1,0 +1,71 @@
+.category-section {
+  margin-bottom: 1.75rem;
+}
+
+.category-title {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  color: var(--brown);
+  margin: 0 0 0.6rem;
+  padding-bottom: 0.3rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.category-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--tan);
+}
+
+.checklist {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--tan-light);
+  transition: opacity 0.2s;
+}
+
+.checklist-item:last-child {
+  border-bottom: none;
+}
+
+.checklist-item input[type="checkbox"] {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: var(--terracotta);
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  box-shadow: none;
+}
+
+.checklist-item__text {
+  font-size: 0.97rem;
+  transition: color 0.2s, text-decoration 0.2s;
+}
+
+.checklist-item__text--owned {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+
+.checklist-item__qty {
+  font-size: 0.875rem;
+  color: var(--muted);
+  margin-left: 0.4rem;
+}
+
+.checklist-item__qty--owned {
+  color: var(--tan);
+}

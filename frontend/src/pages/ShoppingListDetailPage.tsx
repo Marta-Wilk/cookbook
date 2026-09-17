@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ShoppingList, ShoppingListItem, shoppingListApi } from '../api/client'
+import './ShoppingListDetailPage.css'
 
 interface LocalItem extends ShoppingListItem {
   ownedLocal: boolean
@@ -80,24 +81,21 @@ export default function ShoppingListDetailPage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-        <h1 style={{ margin: 0 }}>Shopping List — {list.name}</h1>
-        <button onClick={() => navigate('/shopping-list')}>← Back to lists</button>
-        <button onClick={handleSave} disabled={saving || !isDirty}>
-          {saving ? 'Saving…' : 'Save'}
-        </button>
-        <button onClick={handleDelete} disabled={deleting}>{deleting ? 'Deleting…' : 'Delete'}</button>
+      <div className="page-header">
+        <h1 className="page-header__title">Shopping List — {list.name}</h1>
+        <div className="page-header__actions">
+          <button className="btn btn--secondary" onClick={() => navigate('/shopping-list')}>← Back</button>
+          <button className="btn btn--primary" onClick={handleSave} disabled={saving || !isDirty}>
+            {saving ? 'Saving…' : 'Save'}
+          </button>
+          <button className="btn btn--danger" onClick={handleDelete} disabled={deleting}>
+            {deleting ? 'Deleting…' : 'Delete'}
+          </button>
+        </div>
       </div>
 
       {list.stubMode && (
-        <div style={{
-          background: '#fff8e1',
-          border: '1px solid #ffe082',
-          borderRadius: '4px',
-          padding: '0.75rem 1rem',
-          marginBottom: '1.25rem',
-          color: '#5f4400',
-        }}>
+        <div className="alert alert--warning">
           <strong>AI generation unavailable</strong> — Anthropic API key is not configured.
           {' '}This list was built directly from your plan entries without AI processing: ingredients may be
           duplicated across recipes, quantities are not summed, and items are not grouped by category.
@@ -105,31 +103,23 @@ export default function ShoppingListDetailPage() {
       )}
 
       {items.length === 0 ? (
-        <p>No items in this shopping list.</p>
+        <p className="empty-state">No items in this shopping list.</p>
       ) : (
         sortedCategories.map(category => (
-          <div key={category} style={{ marginBottom: '1.5rem' }}>
-            <h3 style={{ margin: '0 0 0.5rem', borderBottom: '1px solid #ddd', paddingBottom: '0.25rem' }}>
-              {category}
-            </h3>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+          <div key={category} className="category-section">
+            <h3 className="category-title">{category}</h3>
+            <ul className="checklist">
               {groups[category].map(({ item, index }) => (
-                <li
-                  key={item.id}
-                  style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.4rem' }}
-                >
+                <li key={item.id} className="checklist-item">
                   <input
                     type="checkbox"
                     checked={item.ownedLocal}
                     onChange={() => toggleOwned(index)}
                   />
-                  <span style={{
-                    textDecoration: item.ownedLocal ? 'line-through' : 'none',
-                    color: item.ownedLocal ? '#999' : 'inherit',
-                  }}>
+                  <span className={`checklist-item__text${item.ownedLocal ? ' checklist-item__text--owned' : ''}`}>
                     {item.ingredient}
                     {item.quantity && (
-                      <span style={{ color: item.ownedLocal ? '#bbb' : '#666', marginLeft: '0.5rem' }}>
+                      <span className={`checklist-item__qty${item.ownedLocal ? ' checklist-item__qty--owned' : ''}`}>
                         {item.quantity}
                       </span>
                     )}

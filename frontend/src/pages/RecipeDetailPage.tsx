@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Recipe, recipesApi } from '../api/client'
+import './RecipeDetailPage.css'
 
 export default function RecipeDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -47,121 +48,123 @@ export default function RecipeDetailPage() {
   }
 
   if (loading) return <p>Loading…</p>
-  if (error) return <p style={{ color: 'red' }}>Error: {error}</p>
+  if (error) return <p className="error-text">Error: {error}</p>
   if (!recipe) return null
 
   if (editing) {
     return (
-      <div>
+      <div className="recipe-edit-form">
+        <Link to="/" className="back-link">← Back to recipes</Link>
         <h1>Edit: {recipe.name}</h1>
-        {saveError && <p style={{ color: 'red' }}>{saveError}</p>}
-        <table style={{ borderSpacing: '0.5rem 0.75rem' }}>
-          <tbody>
-            <tr>
-              <td><label htmlFor="name">Name</label></td>
-              <td>
-                <input
-                  id="name"
-                  value={form.name ?? ''}
-                  onChange={e => field('name', e.target.value)}
-                  style={{ width: '20rem' }}
-                />
-              </td>
-            </tr>
-            <tr>
-              <td><label htmlFor="tags">Tags</label></td>
-              <td>
-                <input
-                  id="tags"
-                  value={form.tags ?? ''}
-                  onChange={e => field('tags', e.target.value)}
-                  style={{ width: '20rem' }}
-                  placeholder="comma-separated"
-                />
-              </td>
-            </tr>
-            <tr>
-              <td><label htmlFor="servings">Servings</label></td>
-              <td>
-                <input
-                  id="servings"
-                  type="number"
-                  min={1}
-                  value={form.servings ?? ''}
-                  onChange={e => field('servings', Number(e.target.value))}
-                  style={{ width: '5rem' }}
-                />
-              </td>
-            </tr>
-            <tr>
-              <td><label htmlFor="prep">Prep time (min)</label></td>
-              <td>
-                <input
-                  id="prep"
-                  type="number"
-                  min={0}
-                  value={form.prepTimeMinutes ?? ''}
-                  onChange={e => field('prepTimeMinutes', Number(e.target.value))}
-                  style={{ width: '5rem' }}
-                />
-              </td>
-            </tr>
-            <tr>
-              <td style={{ verticalAlign: 'top' }}><label htmlFor="content">Content</label></td>
-              <td>
-                <textarea
-                  id="content"
-                  rows={24}
-                  value={form.content ?? ''}
-                  onChange={e => field('content', e.target.value)}
-                  style={{ width: '50rem', fontFamily: 'monospace', fontSize: '0.9rem' }}
-                />
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-          <button onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
-          <button onClick={cancelEdit} disabled={saving}>Cancel</button>
+        {saveError && <p className="error-text">{saveError}</p>}
+        <div className="form-grid">
+          <label className="form-label" htmlFor="name">Name</label>
+          <input
+            id="name"
+            className="recipe-edit-input--text"
+            value={form.name ?? ''}
+            onChange={e => field('name', e.target.value)}
+          />
+
+          <label className="form-label" htmlFor="tags">Tags</label>
+          <input
+            id="tags"
+            className="recipe-edit-input--text"
+            value={form.tags ?? ''}
+            onChange={e => field('tags', e.target.value)}
+            placeholder="comma-separated"
+          />
+
+          <label className="form-label" htmlFor="servings">Servings</label>
+          <input
+            id="servings"
+            type="number"
+            min={1}
+            className="recipe-edit-input--short"
+            value={form.servings ?? ''}
+            onChange={e => field('servings', Number(e.target.value))}
+          />
+
+          <label className="form-label" htmlFor="prep">Prep time (min)</label>
+          <input
+            id="prep"
+            type="number"
+            min={0}
+            className="recipe-edit-input--short"
+            value={form.prepTimeMinutes ?? ''}
+            onChange={e => field('prepTimeMinutes', Number(e.target.value))}
+          />
+
+          <label className="form-label" htmlFor="content">Content</label>
+          <textarea
+            id="content"
+            rows={24}
+            className="recipe-edit-textarea"
+            value={form.content ?? ''}
+            onChange={e => field('content', e.target.value)}
+          />
+        </div>
+        <div className="page-header__actions recipe-edit-actions">
+          <button className="btn btn--primary" onClick={save} disabled={saving}>
+            {saving ? 'Saving…' : 'Save'}
+          </button>
+          <button className="btn btn--secondary" onClick={cancelEdit} disabled={saving}>Cancel</button>
         </div>
       </div>
     )
   }
 
+  const metaParts = [
+    recipe.servings ? `Serves ${recipe.servings}` : null,
+    recipe.prepTimeMinutes ? `${recipe.prepTimeMinutes} min` : null,
+  ].filter(Boolean)
+
+  const tags = recipe.tags
+    ? recipe.tags.split(',').map(t => t.trim()).filter(Boolean)
+    : []
+
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-        <Link to="/">← Back to recipes</Link>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <button onClick={() => setEditing(true)}>Edit</button>
+      <Link to="/" className="back-link">← Back to recipes</Link>
+
+      <div className="recipe-header">
+        <h1 className="recipe-header__title">{recipe.name}</h1>
+        <div className="recipe-header__actions">
+          <button className="btn btn--secondary" onClick={() => setEditing(true)}>Edit</button>
           <button
+            className="btn btn--danger"
             onClick={async () => {
               if (!confirm(`Delete "${recipe.name}"?`)) return
               await recipesApi.delete(recipe.id)
               navigate('/')
             }}
-            style={{ color: 'red' }}
           >
             Delete
           </button>
         </div>
       </div>
 
-      <h1>{recipe.name}</h1>
-      <p style={{ color: '#666', margin: '0 0 1rem' }}>
-        {[
-          recipe.servings && `Serves ${recipe.servings}`,
-          recipe.prepTimeMinutes && `${recipe.prepTimeMinutes} min`,
-          recipe.tags,
-        ].filter(Boolean).join(' · ')}
-      </p>
+      <div className="meta-row">
+        {metaParts.map((part, i) => (
+          <span key={i}>
+            {i > 0 && <span className="meta-row__sep">·</span>}
+            {part}
+          </span>
+        ))}
+        {tags.length > 0 && (
+          <>
+            {metaParts.length > 0 && <span className="meta-row__sep">·</span>}
+            <ul className="tag-list">
+              {tags.map(t => <li key={t} className="tag">{t}</li>)}
+            </ul>
+          </>
+        )}
+      </div>
 
       {recipe.content ? (
-        <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', lineHeight: 1.6 }}>
-          {recipe.content}
-        </pre>
+        <div className="recipe-content">{recipe.content}</div>
       ) : (
-        <p style={{ color: '#999' }}>No content.</p>
+        <p className="empty-state">No content.</p>
       )}
     </div>
   )

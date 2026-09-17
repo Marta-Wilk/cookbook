@@ -1,0 +1,7 @@
+.shopping-list-row {
+  cursor: pointer;
+}
+
+.shopping-list-meta {
+  color: var(--muted);
+}
