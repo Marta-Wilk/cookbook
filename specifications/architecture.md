@@ -16,7 +16,7 @@ cookbook/
 
 - **Framework:** Spring Boot 3.3.x
 - **Language:** Java 21
-- **Database:** PostgreSQL (preferred); H2 in-memory for tests only
+- **Database:** PostgreSQL (primary, activated by `POSTGRES_URL` env var); H2 file-based (automatic fallback); H2 in-memory for tests
 - **ORM:** Spring Data JPA / Hibernate
 - **Build:** Maven 3.9+
 - **Tests:** JUnit 5, MockMvc (`@WebMvcTest`), `@DataJpaTest`
@@ -30,6 +30,25 @@ com.cookbook
 ├── mealplan/         MealPlan + MealPlanEntry, flexible day planner
 └── shoppinglist/     AI-powered generation + persisted list management
 ```
+
+### Database configuration
+
+The active datasource is chosen at startup by `DataSourceConfig` (`com.cookbook.config`):
+
+| Condition                               | Datasource used             |
+|-----------------------------------------|-----------------------------|
+| `POSTGRES_URL` unset                    | H2 file — `~/.cookbook/`   |
+| `POSTGRES_URL` set, connection OK       | PostgreSQL                  |
+| `POSTGRES_URL` set, connection timeout  | H2 file — `~/.cookbook/`   |
+
+Required env vars for PostgreSQL:
+- `POSTGRES_URL` — e.g. `jdbc:postgresql://localhost:5432/cookbook`
+- `POSTGRES_USER` — default: `postgres`
+- `POSTGRES_PASSWORD` — default: empty
+
+Tests always use H2 in-memory via `src/test/resources/application.yml`.
+
+See `specifications/features/F004-database-configuration.md` for full spec.
 
 ### Conventions
 

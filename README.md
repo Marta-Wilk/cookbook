@@ -22,34 +22,70 @@ A personal home cookbook application for managing recipes, planning weekly meals
 - **JDK 21** — `java -version` should report `21.x`
 - **Maven 3.9+** — `mvn -version`
 - **Node.js 18+** and **npm** — `node -v` and `npm -v`
-- **PostgreSQL 15+** running locally (or skip it — the backend defaults to H2 in-memory for development)
+- **PostgreSQL 15+** (optional) — the backend falls back to a local H2 file if PostgreSQL is not available
 - **Anthropic API key** (optional) — only required for real AI shopping list generation
 
 ## Environment setup
 
 ### Backend database
 
-By default, the backend uses an **H2 in-memory database** — no setup required for local development.
+The backend automatically selects its database at startup:
 
-To use PostgreSQL instead, set these environment variables before starting the backend:
+| Condition | Database used |
+|---|---|
+| `POSTGRES_URL` not set | H2 file-based — `cookbookdb.mv.db` in the project root (data persists across restarts) |
+| `POSTGRES_URL` set and reachable | PostgreSQL |
+| `POSTGRES_URL` set but unreachable | Falls back to H2 file-based with a warning |
 
+**Option A — no setup (H2 fallback)**
+
+Start the backend with no extra configuration. Data is stored in `cookbookdb.mv.db` in the project root and survives restarts.
+
+**Option B — PostgreSQL**
+
+1. Create the database (run once):
+
+```bash
+psql -U postgres -f database/init.sql
 ```
-SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/cookbook
-SPRING_DATASOURCE_USERNAME=<your-pg-user>
-SPRING_DATASOURCE_PASSWORD=<your-pg-password>
+
+2. Set environment variables before starting the backend:
+
+**Linux / macOS** — add to `~/.bashrc` or `~/.zshrc`:
+
+```bash
+export POSTGRES_URL=jdbc:postgresql://localhost:5432/cookbook
+export POSTGRES_USER=postgres          # default if omitted
+export POSTGRES_PASSWORD=your_password
 ```
+
+**Windows** — run once in PowerShell (persists across sessions and reboots):
+
+```powershell
+[System.Environment]::SetEnvironmentVariable("POSTGRES_URL", "jdbc:postgresql://localhost:5432/cookbook", "User")
+[System.Environment]::SetEnvironmentVariable("POSTGRES_USER", "postgres", "User")
+[System.Environment]::SetEnvironmentVariable("POSTGRES_PASSWORD", "your_password", "User")
+```
+
+After running these commands, open a new terminal before starting the backend — existing sessions do not pick up the new values.
+
+Hibernate creates all tables automatically on first startup — no additional SQL is needed.
 
 ### AI shopping list (optional)
 
 Set the `ANTHROPIC_API_KEY` environment variable to enable real LLM-based ingredient consolidation.
 Without it, the service returns a hardcoded demo response — everything else works normally.
 
-```bash
-# Linux / macOS
-export ANTHROPIC_API_KEY=sk-ant-...
+**Linux / macOS** — add to `~/.bashrc` or `~/.zshrc`:
 
-# Windows PowerShell
-$env:ANTHROPIC_API_KEY = "sk-ant-..."
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...
+```
+
+**Windows** — run once in PowerShell:
+
+```powershell
+[System.Environment]::SetEnvironmentVariable("ANTHROPIC_API_KEY", "sk-ant-...", "User")
 ```
 
 ## Running locally
@@ -62,7 +98,7 @@ mvn spring-boot:run
 ```
 
 - REST API: http://localhost:8080/api
-- H2 console (dev only): http://localhost:8080/h2-console — JDBC URL: `jdbc:h2:mem:cookbookdb`
+- H2 console (H2 mode only): http://localhost:8080/h2-console — JDBC URL: `jdbc:h2:file:../cookbookdb`
 
 ### 2. Frontend
 
