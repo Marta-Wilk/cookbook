@@ -1,0 +1,11 @@
+app:
+  datasource:
+    postgres:
+      url: ""   # force H2 path in DataSourceConfig regardless of POSTGRES_URL env var
+    h2:
+      url: jdbc:h2:mem:cookbookdb;DB_CLOSE_DELAY=-1
+
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
