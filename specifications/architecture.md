@@ -37,9 +37,9 @@ The active datasource is chosen at startup by `DataSourceConfig` (`com.cookbook.
 
 | Condition                               | Datasource used             |
 |-----------------------------------------|-----------------------------|
-| `POSTGRES_URL` unset                    | H2 file — `~/.cookbook/`   |
-| `POSTGRES_URL` set, connection OK       | PostgreSQL                  |
-| `POSTGRES_URL` set, connection timeout  | H2 file — `~/.cookbook/`   |
+| `POSTGRES_URL` unset                    | H2 file — project root (`cookbookdb.mv.db`) |
+| `POSTGRES_URL` set, connection OK       | PostgreSQL                                  |
+| `POSTGRES_URL` set, connection timeout  | H2 file — project root (`cookbookdb.mv.db`) |
 
 Required env vars for PostgreSQL:
 - `POSTGRES_URL` — e.g. `jdbc:postgresql://localhost:5432/cookbook`
