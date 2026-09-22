@@ -35,6 +35,9 @@ public class DataSourceConfig {
             config.setUsername(postgresUsername);
             config.setPassword(postgresPassword);
             config.setConnectionTimeout(3_000);
+            config.setInitializationFailTimeout(-1);
+            config.addDataSourceProperty("connectTimeout", "3");
+            config.addDataSourceProperty("socketTimeout", "5");
             config.setMaximumPoolSize(5);
             HikariDataSource ds = new HikariDataSource(config);
             try {

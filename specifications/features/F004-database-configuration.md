@@ -17,8 +17,9 @@ requiring any external infrastructure.
 3. When `POSTGRES_URL` is set but the connection times out (within ≤ 3 seconds), the
    application logs a warning and starts with H2 file-based — no exception is thrown
    and the application does not fail to start
-4. H2 file-based data is stored at `${user.home}/.cookbook/cookbookdb.mv.db`; all
-   persisted data (recipes, meal plans, shopping lists) survives an application restart
+4. H2 file-based data is stored at `cookbookdb.mv.db` in the project root (JDBC URL:
+   `jdbc:h2:file:../cookbookdb` relative to the `backend/` directory); all persisted
+   data (recipes, meal plans, shopping lists) survives an application restart
 5. All JPA entities and repositories behave identically on both databases; the schema is
    managed by `ddl-auto: update` on both
 6. All `@DataJpaTest` and `@SpringBootTest` tests use H2 in-memory; they never read or
@@ -54,5 +55,5 @@ POSTGRES_PASSWORD=secret
 - `mvn verify` passes with no `POSTGRES_URL` set (CI environment has no PostgreSQL)
 - A `@SpringBootTest` save + find round-trip for a `Recipe` entity succeeds without
   PostgreSQL available
-- After the test run, no new `.mv.db` file is created under `${user.home}/.cookbook/`
+- After the test run, no new `.mv.db` file is created in the project root
   (confirms tests used in-memory H2, not the file-based database)
