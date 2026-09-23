@@ -389,3 +389,11 @@ textarea {
   border: 1.5px solid #e0c06a;
   color: #5a3e0a;
 }
+
+/* ── Print ────────────────────────────────────────────────── */
+@media print {
+  .nav,
+  .footer {
+    display: none;
+  }
+}
