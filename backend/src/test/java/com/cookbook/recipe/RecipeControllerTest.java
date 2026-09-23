@@ -5,8 +5,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -36,16 +38,6 @@ class RecipeControllerTest {
     }
 
     @Test
-    void getById_notFound_returns404() throws Exception {
-        when(recipeService.findById(99L))
-                .thenThrow(new org.springframework.web.server.ResponseStatusException(
-                        org.springframework.http.HttpStatus.NOT_FOUND));
-
-        mockMvc.perform(get("/api/recipes/99"))
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
     void create_validRecipe_returns201() throws Exception {
         Recipe recipe = new Recipe();
         recipe.setName("Tomato Soup");
@@ -66,5 +58,40 @@ class RecipeControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.slug").value("tomato-soup"));
+    }
+
+    @Test
+    void create_missingName_returns400() throws Exception {
+        Recipe recipe = new Recipe();
+        recipe.setServings(2);
+
+        mockMvc.perform(post("/api/recipes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(recipe)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void create_duplicateSlug_returns409() throws Exception {
+        Recipe recipe = new Recipe();
+        recipe.setName("Tomato Soup");
+        recipe.setServings(4);
+
+        when(recipeService.create(any()))
+                .thenThrow(new ResponseStatusException(HttpStatus.CONFLICT, "Recipe already exists: tomato-soup"));
+
+        mockMvc.perform(post("/api/recipes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(recipe)))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void getBySlug_notFound_returns404() throws Exception {
+        when(recipeService.findBySlug("nonexistent"))
+                .thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "Recipe not found: nonexistent"));
+
+        mockMvc.perform(get("/api/recipes/nonexistent"))
+                .andExpect(status().isNotFound());
     }
 }

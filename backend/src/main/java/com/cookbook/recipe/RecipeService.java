@@ -83,13 +83,6 @@ public class RecipeService {
         return repository.findAll();
     }
 
-    public Recipe findById(Long id) {
-        Recipe recipe = repository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Recipe not found: " + id));
-        attachContent(recipe);
-        return recipe;
-    }
-
     public Recipe findBySlug(String slug) {
         Recipe recipe = repository.findBySlug(slug)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Recipe not found: " + slug));
@@ -98,14 +91,26 @@ public class RecipeService {
     }
 
     public Recipe create(Recipe recipe) {
+        if (recipe.getServings() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Servings is required");
+        }
         if (recipe.getSlug() == null || recipe.getSlug().isBlank()) {
             recipe.setSlug(toSlug(recipe.getName()));
+        }
+        if (repository.findBySlug(recipe.getSlug()).isPresent()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Recipe already exists: " + recipe.getSlug());
+        }
+        try {
+            writeRecipeFile(recipe);
+        } catch (IOException e) {
+            log.error("Failed to write recipe file for slug '{}'", recipe.getSlug(), e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to write recipe file");
         }
         return repository.save(recipe);
     }
 
-    public Recipe update(Long id, Recipe patch) {
-        Recipe existing = findById(id);
+    public Recipe update(String slug, Recipe patch) {
+        Recipe existing = findBySlug(slug);
         existing.setName(patch.getName());
         existing.setContent(patch.getContent());
         existing.setTags(patch.getTags());
@@ -120,9 +125,14 @@ public class RecipeService {
         return repository.save(existing);
     }
 
-    public void delete(Long id) {
-        findById(id);
-        repository.deleteById(id);
+    public void delete(String slug) {
+        Recipe recipe = findBySlug(slug);
+        try {
+            Files.deleteIfExists(Paths.get(recipesDir, recipe.getSlug() + ".md"));
+        } catch (IOException e) {
+            log.error("Failed to delete recipe file for slug '{}'", recipe.getSlug(), e);
+        }
+        repository.deleteById(recipe.getId());
     }
 
     private void writeRecipeFile(Recipe recipe) throws IOException {

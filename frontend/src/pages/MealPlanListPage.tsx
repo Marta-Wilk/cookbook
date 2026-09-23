@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MealPlan, mealPlansApi } from '../api/client'
+import ConfirmModal from '../components/ConfirmModal'
 import './MealPlanListPage.css'
 
 export default function MealPlanListPage() {
   const [plans, setPlans] = useState<MealPlan[]>([])
   const [loading, setLoading] = useState(true)
+  const [pendingDelete, setPendingDelete] = useState<MealPlan | null>(null)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -15,9 +17,9 @@ export default function MealPlanListPage() {
   }, [])
 
   async function handleDelete(plan: MealPlan) {
-    if (!window.confirm('Are you sure you want to remove this plan? This operation cannot be undone.')) return
     await mealPlansApi.delete(plan.id)
     setPlans(prev => prev.filter(p => p.id !== plan.id))
+    setPendingDelete(null)
   }
 
   if (loading) return <p>Loading…</p>
@@ -51,13 +53,22 @@ export default function MealPlanListPage() {
                   <div className="page-header__actions plan-row-actions">
                     <button className="btn btn--secondary" onClick={() => navigate(`/meal-plan/${plan.id}`)}>Open</button>
                     <button className="btn btn--secondary" onClick={() => navigate(`/meal-plan/${plan.id}/edit`)}>Edit</button>
-                    <button className="btn btn--danger" onClick={() => handleDelete(plan)}>Delete</button>
+                    <button className="btn btn--danger" onClick={() => setPendingDelete(plan)}>Delete</button>
                   </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+      )}
+      {pendingDelete && (
+        <ConfirmModal
+          title={`Delete "${pendingDelete.name}"?`}
+          message="This will permanently remove the meal plan and cannot be undone."
+          confirmLabel="Delete"
+          onConfirm={() => handleDelete(pendingDelete)}
+          onCancel={() => setPendingDelete(null)}
+        />
       )}
     </div>
   )

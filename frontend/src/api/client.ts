@@ -63,12 +63,12 @@ export interface ShoppingList {
 
 export const recipesApi = {
   getAll: () => request<Recipe[]>('/recipes'),
-  getById: (id: number) => request<Recipe>(`/recipes/${id}`),
+  getBySlug: (slug: string) => request<Recipe>(`/recipes/${slug}`),
   create: (recipe: Omit<Recipe, 'id'>) =>
     request<Recipe>('/recipes', { method: 'POST', body: JSON.stringify(recipe) }),
-  update: (id: number, recipe: Partial<Recipe>) =>
-    request<Recipe>(`/recipes/${id}`, { method: 'PUT', body: JSON.stringify(recipe) }),
-  delete: (id: number) => request<void>(`/recipes/${id}`, { method: 'DELETE' }),
+  update: (slug: string, recipe: Partial<Recipe>) =>
+    request<Recipe>(`/recipes/${slug}`, { method: 'PUT', body: JSON.stringify(recipe) }),
+  delete: (slug: string) => request<void>(`/recipes/${slug}`, { method: 'DELETE' }),
 }
 
 export const mealPlansApi = {

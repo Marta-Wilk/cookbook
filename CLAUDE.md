@@ -35,11 +35,12 @@ cookbook/
 5. CI must pass (all tests green) before the PR can be merged
 6. A human (the product owner) reviews and approves the merge
 
-**When given a feature to implement:**
-- Start by reading the relevant spec file
-- Follow the data model and API contract exactly
-- Implement the holdout tests first (they define done)
-- Do not add fields, endpoints, or behaviour beyond what the spec states
+**Feature workflow — always follow this order:**
+1. For new or changed functionality: update the relevant spec in `specifications/features/` first
+2. Read the (updated) spec before writing any code
+3. Follow the data model and API contract exactly
+4. Implement the holdout tests first (they define done)
+5. Do not add fields, endpoints, or behaviour beyond what the spec states
 
 ## Backend conventions
 

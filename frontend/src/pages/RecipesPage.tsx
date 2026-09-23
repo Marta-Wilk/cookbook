@@ -27,7 +27,8 @@ export default function RecipesPage() {
     <div>
       <div className="recipes-page-header">
         <h1>Recipes</h1>
-        {recipes.length > 0 && (
+        <div className="recipes-page-header__right">
+          {recipes.length > 0 && (
           <div className="recipe-search">
             <div className="recipe-search__modes">
               <label className="recipe-search__mode-label">
@@ -61,7 +62,9 @@ export default function RecipesPage() {
               aria-label="Search recipes"
             />
           </div>
-        )}
+          )}
+          <Link to="/recipes/new" className="btn btn--primary">+ Add Recipe</Link>
+        </div>
       </div>
 
       {recipes.length === 0 ? (
@@ -71,8 +74,8 @@ export default function RecipesPage() {
       ) : (
         <ul className="recipe-list">
           {filteredRecipes.map(r => (
-            <li key={r.id}>
-              <Link to={`/recipes/${r.id}`} className="recipe-row">
+            <li key={r.slug}>
+              <Link to={`/recipes/${r.slug}`} className="recipe-row">
                 <span className="recipe-row__name">{r.name}</span>
                 <span className="recipe-row__meta">
                   {r.prepTimeMinutes > 0 && (
