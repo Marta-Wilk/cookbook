@@ -107,6 +107,17 @@ It displays:
   processing was unavailable: items may be duplicated, quantities are not summed, and
   there is no category grouping
 
+### Print
+The shopping list detail view includes a **Print** button in the page header actions.
+Clicking it calls the browser's native print dialog, which provides a live print preview
+and lets the user choose any installed printer or save to PDF.
+
+The printed output must:
+- Show the list name as the document title
+- Show all category sections with their items and quantities
+- Preserve the owned (strikethrough) state of checked items
+- Hide the navigation bar, footer, page action buttons (Back, Save, Print, Delete), and the stub-mode warning banner
+
 ### Empty plan handling
 HTTP 204 from the generate endpoint is handled client-side — no navigation occurs;
 the message *"For this plan there is no products to buy, you planned to eat out."*
@@ -122,3 +133,4 @@ is shown on the Meal Plan Details page.
 - READY_PRODUCT entry appears in saved list without calling LLM
 - `PATCH` owned=true on an item → GET returns that item with `owned: true`
 - `DELETE` list → GET returns 404 for that list id
+- Print button is present on the shopping list detail page

@@ -69,3 +69,24 @@
 .checklist-item__qty--owned {
   color: var(--tan);
 }
+
+@media print {
+  .page-header__actions { display: none; }
+  .alert { display: none; }
+
+  .checklist-item { transition: none; border-bottom: none; padding: 0.1rem 0; }
+
+  .page-header__title { font-size: 16pt; color: black; }
+  .category-title     { font-size: 12pt; color: black; }
+  .category-title::after { background: #ccc; }
+  .checklist-item__text { font-size: 11pt; color: black; }
+  .checklist-item__qty  { color: #555; }
+
+  .checklist-item__text--owned { text-decoration: line-through; color: #888; }
+  .checklist-item__qty--owned  { color: #aaa; }
+
+  .checklist-item input[type="checkbox"] {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}

@@ -88,6 +88,7 @@ export default function ShoppingListDetailPage() {
           <button className="btn btn--primary" onClick={handleSave} disabled={saving || !isDirty}>
             {saving ? 'Saving…' : 'Save'}
           </button>
+          <button className="btn btn--secondary" onClick={() => window.print()}>Print</button>
           <button className="btn btn--danger" onClick={handleDelete} disabled={deleting}>
             {deleting ? 'Deleting…' : 'Delete'}
           </button>
