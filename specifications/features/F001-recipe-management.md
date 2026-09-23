@@ -34,13 +34,33 @@ the application. The database holds only a metadata index for querying.
 | name            | String   | required, non-blank                      |
 | slug            | String   | unique, URL-safe, derived from name      |
 | tags            | String   | comma-separated                          |
-| servings        | Integer  | optional                                 |
+| servings        | Integer  | required                                 |
 | prepTimeMinutes | Integer  | optional                                 |
 | createdAt       | DateTime | set on insert                            |
 | updatedAt       | DateTime | updated on every save                    |
 
 Recipe `content` (full Markdown) is never stored in the DB — it is read from
 `recipes/<slug>.md` at request time and included in the API response.
+
+## Add recipe form
+
+Users can create a new recipe through a form in the UI. The form collects all required and optional fields, assembles the Markdown content, and submits it to the API. On success the backend writes `recipes/<slug>.md` to disk and indexes the DB row.
+
+### Acceptance criteria
+
+18. An **Add Recipe** button is displayed on the recipes list page and navigates to `/recipes/new`
+19. The form contains the following fields:
+    - **Name** — required text input
+    - **Ingredients** — required dynamic list; at least one row must be filled; rows can be added and removed
+    - **Instructions** — required dynamic list; at least one row must be filled; rows can be added and removed
+    - **Servings** — required number input
+    - **Prep time (minutes)** — optional number input
+    - **Tags** — optional text input, comma-separated
+    - **Notes** — optional textarea
+20. On submit the form assembles the `## Ingredients`, `## Instructions`, and (if provided) `## Notes` sections as the `content` field, then calls `POST /api/recipes` with all fields
+21. On success (201) the user is redirected to the new recipe's detail page
+22. On 409 (duplicate slug) an inline error message is shown on the form without navigating away
+23. The backend `POST /api/recipes` writes `recipes/<slug>.md` to disk **before** saving the DB row — so a failed file write leaves no orphaned DB record. If the DB save subsequently fails, the file on disk will be picked up by the startup sync (AC #8).
 
 ## Recipe list search (frontend)
 

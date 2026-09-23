@@ -21,12 +21,7 @@ public class RecipeController {
         return service.findAll();
     }
 
-    @GetMapping("/{id}")
-    public Recipe getById(@PathVariable Long id) {
-        return service.findById(id);
-    }
-
-    @GetMapping("/slug/{slug}")
+    @GetMapping("/{slug}")
     public Recipe getBySlug(@PathVariable String slug) {
         return service.findBySlug(slug);
     }
@@ -36,14 +31,14 @@ public class RecipeController {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.create(recipe));
     }
 
-    @PutMapping("/{id}")
-    public Recipe update(@PathVariable Long id, @Valid @RequestBody Recipe recipe) {
-        return service.update(id, recipe);
+    @PutMapping("/{slug}")
+    public Recipe update(@PathVariable String slug, @Valid @RequestBody Recipe recipe) {
+        return service.update(slug, recipe);
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        service.delete(id);
+    @DeleteMapping("/{slug}")
+    public ResponseEntity<Void> delete(@PathVariable String slug) {
+        service.delete(slug);
         return ResponseEntity.noContent().build();
     }
 }

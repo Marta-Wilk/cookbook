@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Recipe, recipesApi } from '../api/client'
+import ConfirmModal from '../components/ConfirmModal'
 import './RecipeDetailPage.css'
 
 export default function RecipeDetailPage() {
-  const { id } = useParams<{ id: string }>()
+  const { slug } = useParams<{ slug: string }>()
   const navigate = useNavigate()
 
   const [recipe, setRecipe] = useState<Recipe | null>(null)
@@ -14,13 +15,14 @@ export default function RecipeDetailPage() {
   const [form, setForm] = useState<Partial<Recipe>>({})
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   useEffect(() => {
-    recipesApi.getById(Number(id))
+    recipesApi.getBySlug(slug!)
       .then(r => { setRecipe(r); setForm(r) })
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false))
-  }, [id])
+  }, [slug])
 
   function field(key: keyof Recipe, value: string | number) {
     setForm(prev => ({ ...prev, [key]: value }))
@@ -30,7 +32,7 @@ export default function RecipeDetailPage() {
     setSaving(true)
     setSaveError(null)
     try {
-      const updated = await recipesApi.update(Number(id), form)
+      const updated = await recipesApi.update(slug!, form)
       setRecipe({ ...updated, content: form.content ?? '' })
       setForm({ ...updated, content: form.content ?? '' })
       setEditing(false)
@@ -131,14 +133,7 @@ export default function RecipeDetailPage() {
         <h1 className="recipe-header__title">{recipe.name}</h1>
         <div className="recipe-header__actions">
           <button className="btn btn--secondary" onClick={() => setEditing(true)}>Edit</button>
-          <button
-            className="btn btn--danger"
-            onClick={async () => {
-              if (!confirm(`Delete "${recipe.name}"?`)) return
-              await recipesApi.delete(recipe.id)
-              navigate('/')
-            }}
-          >
+          <button className="btn btn--danger" onClick={() => setConfirmDelete(true)}>
             Delete
           </button>
         </div>
@@ -165,6 +160,19 @@ export default function RecipeDetailPage() {
         <div className="recipe-content">{recipe.content}</div>
       ) : (
         <p className="empty-state">No content.</p>
+      )}
+
+      {confirmDelete && (
+        <ConfirmModal
+          title={`Delete "${recipe.name}"?`}
+          message="This will permanently remove the recipe file from disk and cannot be undone."
+          confirmLabel="Delete"
+          onConfirm={async () => {
+            await recipesApi.delete(recipe.slug)
+            navigate('/')
+          }}
+          onCancel={() => setConfirmDelete(false)}
+        />
       )}
     </div>
   )

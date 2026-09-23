@@ -1,6 +1,7 @@
 import { BrowserRouter, Link, Route, Routes } from 'react-router-dom'
 import RecipesPage from './pages/RecipesPage'
 import RecipeDetailPage from './pages/RecipeDetailPage'
+import AddRecipePage from './pages/AddRecipePage'
 import MealPlanListPage from './pages/MealPlanListPage'
 import MealPlanCreatePage from './pages/MealPlanCreatePage'
 import MealPlanDetailPage from './pages/MealPlanDetailPage'
@@ -23,7 +24,8 @@ export default function App() {
         <main className="page">
           <Routes>
             <Route path="/" element={<RecipesPage />} />
-            <Route path="/recipes/:id" element={<RecipeDetailPage />} />
+            <Route path="/recipes/new" element={<AddRecipePage />} />
+            <Route path="/recipes/:slug" element={<RecipeDetailPage />} />
             <Route path="/meal-plan" element={<MealPlanListPage />} />
             <Route path="/meal-plan/new" element={<MealPlanCreatePage />} />
             <Route path="/meal-plan/:id" element={<MealPlanDetailPage />} />

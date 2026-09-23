@@ -76,6 +76,12 @@
   gap: 0.3rem;
 }
 
+.recipes-page-header__right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
 /* ── Recipe search ───────────────────────────────────────── */
 .recipe-search {
   display: flex;
