@@ -61,6 +61,21 @@ export interface ShoppingList {
   items: ShoppingListItem[]
 }
 
+export interface RecipeImportRequest {
+  rawText: string
+}
+
+export interface RecipeImportResponse {
+  name: string | null
+  servings: number | null
+  prepTimeMinutes: number | null
+  tags: string | null
+  ingredients: string[]
+  steps: string[]
+  notes: string | null
+  stubMode: boolean
+}
+
 export const recipesApi = {
   getAll: () => request<Recipe[]>('/recipes'),
   getBySlug: (slug: string) => request<Recipe>(`/recipes/${slug}`),
@@ -69,6 +84,8 @@ export const recipesApi = {
   update: (slug: string, recipe: Partial<Recipe>) =>
     request<Recipe>(`/recipes/${slug}`, { method: 'PUT', body: JSON.stringify(recipe) }),
   delete: (slug: string) => request<void>(`/recipes/${slug}`, { method: 'DELETE' }),
+  importFromText: (req: RecipeImportRequest) =>
+    request<RecipeImportResponse>('/recipes/import', { method: 'POST', body: JSON.stringify(req) }),
 }
 
 export const mealPlansApi = {
