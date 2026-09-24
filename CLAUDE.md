@@ -122,6 +122,7 @@ Without it the service returns a stub demo response — fine for local dev.
 
 - When creating a PR, use the current working branch as the head branch and `main` as the base branch unless the user explicitly specifies otherwise.
 - Never close, merge, or delete a PR unless explicitly instructed.
+- `gh` CLI is **not installed** — use the GitHub API directly via PowerShell `Invoke-RestMethod`. Retrieve the token with `printf 'protocol=https\nhost=github.com\n' | git credential fill` (run in Bash), then call `https://api.github.com/repos/Marta-Wilk/cookbook/...`.
 
 ## CI / Quality gate
 

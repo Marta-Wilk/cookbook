@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ShoppingList, ShoppingListItem, shoppingListApi } from '../api/client'
+import ConfirmModal from '../components/ConfirmModal'
 import './ShoppingListDetailPage.css'
 
 interface LocalItem extends ShoppingListItem {
@@ -18,6 +19,7 @@ export default function ShoppingListDetailPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -89,8 +91,8 @@ export default function ShoppingListDetailPage() {
             {saving ? 'Saving…' : 'Save'}
           </button>
           <button className="btn btn--secondary" onClick={() => window.print()}>Print</button>
-          <button className="btn btn--danger" onClick={handleDelete} disabled={deleting}>
-            {deleting ? 'Deleting…' : 'Delete'}
+          <button className="btn btn--danger" onClick={() => setConfirmDelete(true)} disabled={deleting}>
+            Delete
           </button>
         </div>
       </div>
@@ -130,6 +132,14 @@ export default function ShoppingListDetailPage() {
             </ul>
           </div>
         ))
+      )}
+      {confirmDelete && (
+        <ConfirmModal
+          title={`Delete "${list.name}"?`}
+          message="This will permanently remove the shopping list and cannot be undone."
+          onConfirm={handleDelete}
+          onCancel={() => setConfirmDelete(false)}
+        />
       )}
     </div>
   )
