@@ -53,7 +53,6 @@ export default function MealPlanDetailPage({ editMode = false }: { editMode?: bo
   const [draftStartDate, setDraftStartDate] = useState('')
   const [draftDuration, setDraftDuration] = useState(0)
   const [draftSlots, setDraftSlots] = useState<SlotDraft[]>([])
-  const [originalEntries, setOriginalEntries] = useState<MealPlanEntry[]>([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -74,7 +73,6 @@ export default function MealPlanDetailPage({ editMode = false }: { editMode?: bo
     setError('')
     setDraftStartDate(plan.startDate)
     setDraftDuration(plan.durationDays)
-    setOriginalEntries(plan.entries)
     if (plan.entries.length === 0) {
       setDraftSlots(makeDefaultSlots(plan.durationDays))
       return
