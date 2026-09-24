@@ -16,6 +16,37 @@ export default function AddRecipePage() {
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
+  const [aiUnavailable, setAiUnavailable] = useState(false)
+  const [showImportPanel, setShowImportPanel] = useState(false)
+  const [importText, setImportText] = useState('')
+  const [importing, setImporting] = useState(false)
+
+  async function handleImport() {
+    setImporting(true)
+    setError(null)
+    try {
+      const result = await recipesApi.importFromText({ rawText: importText })
+      if (result.stubMode) {
+        setAiUnavailable(true)
+        setShowImportPanel(false)
+        return
+      }
+      setName(result.name ?? '')
+      setServings(result.servings?.toString() ?? '')
+      setPrepTime(result.prepTimeMinutes?.toString() ?? '')
+      setTags(result.tags ?? '')
+      setIngredients(result.ingredients.length > 0 ? result.ingredients : [''])
+      setSteps(result.steps.length > 0 ? result.steps : [''])
+      setNotes(result.notes ?? '')
+      setShowImportPanel(false)
+      setImportText('')
+    } catch {
+      setError('Failed to parse recipe. Please try again.')
+    } finally {
+      setImporting(false)
+    }
+  }
+
   function updateIngredient(index: number, value: string) {
     setIngredients(ingredients.map((v, i) => (i === index ? value : v)))
   }
@@ -84,6 +115,50 @@ export default function AddRecipePage() {
     <div className="add-recipe-page">
       <Link to="/" className="back-link">← Recipes</Link>
       <h1>Add Recipe</h1>
+
+      <div className="import-btn-wrapper">
+        <button
+          type="button"
+          className="btn btn--primary"
+          disabled={aiUnavailable}
+          onClick={() => setShowImportPanel(!showImportPanel)}
+        >
+          Import from text
+        </button>
+        {aiUnavailable && (
+          <span className="import-tooltip">AI unavailable — ANTHROPIC_API_KEY is not configured</span>
+        )}
+      </div>
+
+      {showImportPanel && (
+        <div className="import-panel">
+          <span className="import-panel__label">Paste raw recipe text</span>
+          <textarea
+            className="import-panel__textarea"
+            value={importText}
+            onChange={e => setImportText(e.target.value)}
+            placeholder="Paste any recipe text here — copied from a website, a message, or anywhere else…"
+          />
+          <div className="import-panel__actions">
+            <button
+              type="button"
+              className="btn btn--primary"
+              onClick={handleImport}
+              disabled={importing || !importText.trim()}
+            >
+              {importing ? 'Parsing…' : 'Parse with AI'}
+            </button>
+            <button
+              type="button"
+              className="btn btn--ghost"
+              onClick={() => { setShowImportPanel(false); setImportText('') }}
+              disabled={importing}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {error && <p className="error-text">{error}</p>}
 

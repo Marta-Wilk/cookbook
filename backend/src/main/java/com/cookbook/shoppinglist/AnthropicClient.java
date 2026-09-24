@@ -48,6 +48,32 @@ public class AnthropicClient {
         this.objectMapper = objectMapper;
     }
 
+    public String callRaw(String systemPrompt, String userMessage) {
+        var requestBody = new MessagesRequest(
+                model, 2048, systemPrompt,
+                List.of(new Message("user", userMessage)),
+                List.of());
+        try {
+            String raw = restClient.post()
+                    .uri("/v1/messages")
+                    .body(requestBody)
+                    .retrieve()
+                    .body(String.class);
+            log.info("Anthropic raw response: {}", raw);
+            MessagesResponse response = objectMapper.readValue(raw, MessagesResponse.class);
+            return response.content().stream()
+                    .filter(b -> "text".equals(b.type()))
+                    .findFirst()
+                    .map(ContentBlock::text)
+                    .orElseThrow(() -> new IllegalStateException("No text block in Anthropic response"));
+        } catch (ResponseStatusException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Anthropic API error: {}", e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Anthropic API error: " + e.getMessage());
+        }
+    }
+
     public List<ItemDto> generateItems(String userMessage) {
         var requestBody = new MessagesRequest(
                 model, 2048, SYSTEM_PROMPT,
