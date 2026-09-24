@@ -5,7 +5,14 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     headers: { 'Content-Type': 'application/json' },
     ...options,
   })
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
+  if (!res.ok) {
+    let detail = res.statusText
+    try {
+      const body = await res.json()
+      if (body.detail) detail = body.detail
+    } catch {}
+    throw new Error(`${res.status} ${detail}`)
+  }
   if (res.status === 204) return undefined as T
   return res.json() as Promise<T>
 }
@@ -39,8 +46,18 @@ export interface MealPlanEntry {
   recipeSlug?: string
   recipeName?: string
   servings?: number
+  leftoverSlug?: string
+  leftoverSourcePlanId?: number
   productName?: string
   quantity?: string
+}
+
+export interface Leftover {
+  id: number
+  sourcePlanId: number
+  recipeSlug: string
+  recipeName: string
+  servingsRemaining: number
 }
 
 export interface ShoppingListItem {
@@ -97,10 +114,21 @@ export const mealPlansApi = {
     request<MealPlan>(`/meal-plans/${id}`, { method: 'PUT', body: JSON.stringify(plan) }),
   delete: (id: number) =>
     request<void>(`/meal-plans/${id}`, { method: 'DELETE' }),
+  replaceEntries: (planId: number, entries: Omit<MealPlanEntry, 'id'>[]) =>
+    request<void>(`/meal-plans/${planId}/entries`, { method: 'PUT', body: JSON.stringify(entries) }),
   addEntry: (planId: number, entry: Omit<MealPlanEntry, 'id'>) =>
     request<MealPlanEntry>(`/meal-plans/${planId}/entries`, { method: 'POST', body: JSON.stringify(entry) }),
   deleteEntry: (planId: number, entryId: number) =>
     request<void>(`/meal-plans/${planId}/entries/${entryId}`, { method: 'DELETE' }),
+}
+
+export type LeftoverInput = Omit<Leftover, 'id' | 'sourcePlanId'>
+
+export const leftoversApi = {
+  getAll: () => request<Leftover[]>('/leftovers'),
+  replaceForPlan: (planId: number, leftovers: LeftoverInput[]) =>
+    request<void>(`/leftovers/plan/${planId}`, { method: 'PUT', body: JSON.stringify(leftovers) }),
+  delete: (id: number) => request<void>(`/leftovers/${id}`, { method: 'DELETE' }),
 }
 
 export const shoppingListApi = {

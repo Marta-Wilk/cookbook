@@ -47,6 +47,26 @@
   color: var(--brown);
 }
 
+.recipe-picker__section-header {
+  padding: 0.2rem 0.75rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  background: var(--tan-light);
+  border-bottom: 1px solid var(--tan);
+  list-style: none;
+  pointer-events: none;
+}
+
+.recipe-picker__leftover-badge {
+  margin-left: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--brown);
+  font-weight: 600;
+}
+
 .recipe-picker__empty {
   padding: 0.5rem 0.75rem;
   font-size: 0.875rem;

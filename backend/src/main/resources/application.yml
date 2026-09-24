@@ -2,6 +2,10 @@ spring:
   application:
     name: cookbook-backend
 
+  mvc:
+    problemdetails:
+      enabled: true
+
   jpa:
     hibernate:
       ddl-auto: update

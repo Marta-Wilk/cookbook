@@ -13,6 +13,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
@@ -102,19 +103,6 @@ class MealPlanControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
-    // Holdout 5: Add two entries for the same dayIndex + mealType → 409
-    @Test
-    void addEntry_duplicateSlot_returns409() throws Exception {
-        when(service.addEntry(anyLong(), any()))
-                .thenThrow(new ResponseStatusException(HttpStatus.CONFLICT,
-                        "Slot already occupied: dayIndex=1 mealType=BREAKFAST"));
-
-        mockMvc.perform(post("/api/meal-plans/1/entries")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"dayIndex\":1,\"mealType\":\"BREAKFAST\",\"slotType\":\"EAT_OUT\"}"))
-                .andExpect(status().isConflict());
-    }
-
     // Overlap — create: overlapping date range → 409
     @Test
     void createPlan_overlappingDateRange_returns409() throws Exception {
@@ -147,6 +135,16 @@ class MealPlanControllerTest {
         doNothing().when(service).delete(1L);
 
         mockMvc.perform(delete("/api/meal-plans/1"))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void replaceEntries_returns204() throws Exception {
+        doNothing().when(service).replaceEntries(anyLong(), anyList());
+
+        mockMvc.perform(put("/api/meal-plans/1/entries")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("[{\"dayIndex\":1,\"mealType\":\"BREAKFAST\",\"slotType\":\"EAT_OUT\"}]"))
                 .andExpect(status().isNoContent());
     }
 

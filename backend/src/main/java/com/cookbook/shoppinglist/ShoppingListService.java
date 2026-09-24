@@ -31,6 +31,7 @@ public class ShoppingListService {
 
         List<MealPlanEntry> shoppableEntries = plan.getEntries().stream()
                 .filter(e -> e.getSlotType() != MealPlanEntry.SlotType.EAT_OUT)
+                .filter(e -> e.getLeftoverSlug() == null)
                 .toList();
 
         if (shoppableEntries.isEmpty()) {

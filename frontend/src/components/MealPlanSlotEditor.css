@@ -1,7 +1,7 @@
 .slot-editor {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
   background: var(--paper);
@@ -19,9 +19,20 @@
 .slot-editor__input--product-name { width: 130px; }
 .slot-editor__input--quantity     { width: 90px; }
 
+.slot-editor__recipe-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.slot-editor__recipe-group .leftover-chip {
+  align-self: flex-end;
+}
+
 .slot-editor__servings-label {
   display: flex;
   align-items: center;
+  align-self: flex-start;
   gap: 0.3rem;
   font-size: 0.875rem;
   color: var(--muted);
@@ -29,6 +40,7 @@
 }
 
 .slot-editor__remove {
+  align-self: center;
   margin-left: auto;
   font-size: 1rem;
   line-height: 1;

@@ -15,6 +15,8 @@
   --gold-light: #f5e8c0;
   --red:        #c0392b;
   --red-hover:  #96301e;
+  --sage:       #4a7c4a;
+  --sage-light: #e6f0e6;
 
   --font-display: 'Merriweather', Georgia, serif;
   --font-body:    'Lato', 'Segoe UI', sans-serif;
@@ -222,6 +224,17 @@ p { margin: 0 0 1rem; }
 .btn--ghost:hover:not(:disabled) {
   color: var(--brown);
   border-color: var(--muted);
+}
+
+/* ── Leftover chip ────────────────────────────────────────── */
+.leftover-chip {
+  display: inline-block;
+  color: var(--sage);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  vertical-align: middle;
 }
 
 /* ── Tags ─────────────────────────────────────────────────── */

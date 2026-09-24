@@ -50,6 +50,10 @@
   font-size: 0.95rem;
 }
 
+.meal-entry__detail .leftover-chip {
+  margin-left: 0.5rem;
+}
+
 .day-card__empty {
   color: var(--muted);
   font-style: italic;

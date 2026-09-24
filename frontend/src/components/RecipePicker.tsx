@@ -1,29 +1,56 @@
 import { useEffect, useRef, useState } from 'react'
 import { Recipe } from '../api/client'
+import { AvailableLeftover } from '../utils/leftovers'
 import { filterRecipes } from '../utils/recipeFilter'
 import './RecipePicker.css'
 
 interface RecipePickerProps {
   recipes: Recipe[]
+  leftovers: AvailableLeftover[]
   value: string
-  onChange: (slug: string) => void
+  leftoverSlug?: string
+  onChange: (slug: string, leftoverSlug?: string, leftoverSourcePlanId?: number) => void
 }
 
-export default function RecipePicker({ recipes, value, onChange }: RecipePickerProps) {
-  const [filterQuery, setFilterQuery] = useState(
-    () => recipes.find(r => r.slug === value)?.name ?? ''
-  )
+export default function RecipePicker({ recipes, leftovers, value, leftoverSlug, onChange }: RecipePickerProps) {
+  const [filterQuery, setFilterQuery] = useState<string>(() => {
+    if (leftoverSlug) {
+      return leftovers.find(l => l.recipeSlug === leftoverSlug)?.recipeName
+        ?? recipes.find(r => r.slug === value)?.name
+        ?? ''
+    }
+    return recipes.find(r => r.slug === value)?.name ?? ''
+  })
   const [listOpen, setListOpen] = useState(false)
   const hasInteracted = useRef(false)
 
   useEffect(() => {
     if (!hasInteracted.current) {
-      const name = recipes.find(r => r.slug === value)?.name
+      let name: string | undefined
+      if (leftoverSlug) {
+        name = leftovers.find(l => l.recipeSlug === leftoverSlug)?.recipeName
+      }
+      if (!name) {
+        name = recipes.find(r => r.slug === value)?.name
+      }
       if (name) setFilterQuery(name)
     }
-  }, [recipes, value])
+  }, [recipes, leftovers, value, leftoverSlug])
 
-  const visible = filterRecipes(recipes, filterQuery, 'name')
+  const q = filterQuery.toLowerCase()
+  const visibleLeftovers = leftovers.filter(l => l.recipeName.toLowerCase().includes(q))
+  const visibleRecipes = filterRecipes(recipes, filterQuery, 'name')
+  const noContent = recipes.length === 0 && leftovers.length === 0
+
+  function handleFocus() {
+    hasInteracted.current = true
+    setFilterQuery('')
+    setListOpen(true)
+  }
+
+  function handleBlur() {
+    setTimeout(() => setListOpen(false), 150)
+  }
 
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
     hasInteracted.current = true
@@ -31,10 +58,16 @@ export default function RecipePicker({ recipes, value, onChange }: RecipePickerP
     setListOpen(true)
   }
 
-  function handleSelect(r: Recipe) {
+  function handleSelectLeftover(l: AvailableLeftover) {
+    setFilterQuery(l.recipeName)
+    setListOpen(false)
+    onChange(l.recipeSlug, l.recipeSlug, l.sourcePlanId)
+  }
+
+  function handleSelectRecipe(r: Recipe) {
     setFilterQuery(r.name)
     setListOpen(false)
-    onChange(r.slug)
+    onChange(r.slug, undefined)
   }
 
   return (
@@ -44,25 +77,50 @@ export default function RecipePicker({ recipes, value, onChange }: RecipePickerP
         className="recipe-picker__input"
         placeholder="Search recipe…"
         value={filterQuery}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
         onChange={handleInputChange}
         aria-label="Filter recipes"
       />
-      {recipes.length === 0 ? (
+      {noContent ? (
         <p className="recipe-picker__empty">No recipes available</p>
       ) : listOpen && (
-        visible.length === 0 ? (
+        visibleLeftovers.length === 0 && visibleRecipes.length === 0 ? (
           <p className="recipe-picker__empty">No recipes match</p>
         ) : (
           <ul className="recipe-picker__list" role="list">
-            {visible.map(r => (
+            {visibleLeftovers.length > 0 && (
+              <>
+                <li className="recipe-picker__section-header">Leftovers</li>
+                {visibleLeftovers.map(l => (
+                  <li key={l.recipeSlug}>
+                    <button
+                      type="button"
+                      className={
+                        'recipe-picker__item recipe-picker__item--leftover' +
+                        (l.recipeSlug === leftoverSlug ? ' recipe-picker__item--selected' : '')
+                      }
+                      onClick={() => handleSelectLeftover(l)}
+                    >
+                      {l.recipeName}
+                      <span className="recipe-picker__leftover-badge">leftover · {l.servingsRemaining}</span>
+                    </button>
+                  </li>
+                ))}
+              </>
+            )}
+            {visibleLeftovers.length > 0 && visibleRecipes.length > 0 && (
+              <li className="recipe-picker__section-header">Recipes</li>
+            )}
+            {visibleRecipes.map(r => (
               <li key={r.slug}>
                 <button
                   type="button"
                   className={
                     'recipe-picker__item' +
-                    (r.slug === value ? ' recipe-picker__item--selected' : '')
+                    (r.slug === value && !leftoverSlug ? ' recipe-picker__item--selected' : '')
                   }
-                  onClick={() => handleSelect(r)}
+                  onClick={() => handleSelectRecipe(r)}
                 >
                   {r.name}
                 </button>
