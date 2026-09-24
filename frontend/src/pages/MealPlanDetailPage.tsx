@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { MEAL_TYPES, MealPlan, MealPlanEntry, Recipe, mealPlansApi, recipesApi, shoppingListApi } from '../api/client'
+import { Leftover, MEAL_TYPES, MealPlan, MealPlanEntry, Recipe, leftoversApi, mealPlansApi, recipesApi, shoppingListApi } from '../api/client'
 import { SlotType, SlotDraft, nextKey, generatePlanName, formatDayHeader, sortedDrafts, SlotEditor, InsertDivider } from '../components/MealPlanSlotEditor'
+import { computeAvailableLeftovers, computeCrossPlanUpdates } from '../utils/leftovers'
 import './MealPlanDetailPage.css'
 
 function mealLabel(entry: MealPlanEntry): string {
@@ -24,12 +25,15 @@ function sortedEntries(entries: MealPlanEntry[]): MealPlanEntry[] {
   })
 }
 
-function isDifferent(slot: SlotDraft, orig: MealPlanEntry): boolean {
-  if (slot.mealType !== orig.mealType || slot.dayIndex !== orig.dayIndex || slot.slotType !== orig.slotType) return true
-  if (slot.mealType === 'OTHER' && slot.mealName !== (orig.mealName ?? '')) return true
-  if (slot.slotType === 'RECIPE' && (slot.recipeSlug !== (orig.recipeSlug ?? '') || slot.servings !== (orig.servings ?? 1))) return true
-  if (slot.slotType === 'READY_PRODUCT' && (slot.productName !== (orig.productName ?? '') || slot.quantity !== (orig.quantity ?? ''))) return true
-  return false
+
+function makeDefaultSlots(durationDays: number): SlotDraft[] {
+  const slots: SlotDraft[] = []
+  for (let dayIndex = 1; dayIndex <= durationDays; dayIndex++) {
+    for (const mealType of ['BREAKFAST', 'LUNCH', 'DINNER']) {
+      slots.push({ key: nextKey(), dayIndex, mealType, mealName: '', slotType: 'RECIPE', recipeSlug: '', servings: 1, productName: '', quantity: '' })
+    }
+  }
+  return slots
 }
 
 // ---------- Main component ----------
@@ -40,6 +44,7 @@ export default function MealPlanDetailPage({ editMode = false }: { editMode?: bo
 
   const [plan, setPlan] = useState<MealPlan | null>(null)
   const [recipes, setRecipes] = useState<Recipe[]>([])
+  const [leftovers, setLeftovers] = useState<Leftover[]>([])
   const [loading, setLoading] = useState(true)
 
   const today = new Date().toISOString().split('T')[0]
@@ -58,8 +63,8 @@ export default function MealPlanDetailPage({ editMode = false }: { editMode?: bo
 
   useEffect(() => {
     if (!id) return
-    Promise.all([mealPlansApi.getById(+id), recipesApi.getAll()])
-      .then(([p, r]) => { setPlan(p); setRecipes(r) })
+    Promise.all([mealPlansApi.getById(+id), recipesApi.getAll(), leftoversApi.getAll()])
+      .then(([p, r, l]) => { setPlan(p); setRecipes(r); setLeftovers(l) })
       .finally(() => setLoading(false))
   }, [id])
 
@@ -70,6 +75,10 @@ export default function MealPlanDetailPage({ editMode = false }: { editMode?: bo
     setDraftStartDate(plan.startDate)
     setDraftDuration(plan.durationDays)
     setOriginalEntries(plan.entries)
+    if (plan.entries.length === 0) {
+      setDraftSlots(makeDefaultSlots(plan.durationDays))
+      return
+    }
     setDraftSlots(plan.entries.map(e => ({
       id: e.id,
       key: nextKey(),
@@ -78,6 +87,8 @@ export default function MealPlanDetailPage({ editMode = false }: { editMode?: bo
       mealName: e.mealName ?? '',
       slotType: e.slotType as SlotType,
       recipeSlug: e.recipeSlug ?? '',
+      leftoverSlug: e.leftoverSlug,
+      leftoverSourcePlanId: e.leftoverSourcePlanId,
       servings: e.servings ?? 1,
       productName: e.productName ?? '',
       quantity: e.quantity ?? '',
@@ -114,7 +125,12 @@ export default function MealPlanDetailPage({ editMode = false }: { editMode?: bo
       mealType: slot.mealType,
       ...(slot.mealType === 'OTHER' && { mealName: slot.mealName }),
       slotType: slot.slotType,
-      ...(slot.slotType === 'RECIPE' && { recipeSlug: slot.recipeSlug || recipes[0]?.slug, servings: slot.servings }),
+      ...(slot.slotType === 'RECIPE' && {
+        recipeSlug: slot.recipeSlug,
+        servings: slot.servings,
+        ...(slot.leftoverSlug && { leftoverSlug: slot.leftoverSlug }),
+        ...(slot.leftoverSourcePlanId !== undefined && { leftoverSourcePlanId: slot.leftoverSourcePlanId }),
+      }),
       ...(slot.slotType === 'READY_PRODUCT' && { productName: slot.productName, quantity: slot.quantity }),
     }
   }
@@ -155,42 +171,27 @@ export default function MealPlanDetailPage({ editMode = false }: { editMode?: bo
         })
       }
 
-      const toDeleteIds = new Set<number>()
-      const toPost: SlotDraft[] = []
+      const entries = draftSlots
+        .filter(s => s.dayIndex >= 1 && s.dayIndex <= draftDuration && !(s.slotType === 'RECIPE' && !s.recipeSlug))
+        .map(buildEntry)
+      await mealPlansApi.replaceEntries(plan.id, entries)
 
-      for (const orig of originalEntries) {
-        const current = draftSlots.find(s => s.id === orig.id)
-        if (!current || current.dayIndex > draftDuration || isDifferent(current, orig)) {
-          toDeleteIds.add(orig.id)
-        }
-      }
-
-      for (const slot of draftSlots.filter(s => s.dayIndex <= draftDuration)) {
-        if (!slot.id) {
-          toPost.push(slot)
-        } else {
-          const orig = originalEntries.find(e => e.id === slot.id)
-          if (orig && isDifferent(slot, orig)) {
-            toPost.push(slot)
-          }
-        }
-      }
-
-      for (const id of toDeleteIds) {
-        await mealPlansApi.deleteEntry(plan.id, id)
-      }
-      for (const slot of toPost) {
-        await mealPlansApi.addEntry(plan.id, buildEntry(slot))
+      const dbFromOtherPlans = leftovers.filter(l => l.sourcePlanId !== plan.id)
+      const allAvailable = computeAvailableLeftovers(draftSlots, recipes, dbFromOtherPlans)
+      const ownLeftovers = allAvailable.filter(l => l.sourcePlanId === undefined)
+      await leftoversApi.replaceForPlan(plan.id, ownLeftovers)
+      const crossPlanUpdates = computeCrossPlanUpdates(draftSlots, leftovers)
+      for (const [sourcePlanId, updatedList] of crossPlanUpdates) {
+        await leftoversApi.replaceForPlan(sourcePlanId, updatedList)
       }
 
       const updated = await mealPlansApi.getById(plan.id)
       setPlan(updated)
       navigate(`/meal-plan/${plan.id}`)
     } catch (e) {
-      const msg = e instanceof Error ? e.message : ''
-      setError(msg.startsWith('409')
-        ? 'A meal plan already exists for this date range.'
-        : 'Failed to save changes. Please try again.')
+      const raw = e instanceof Error ? e.message : ''
+      const detail = raw.replace(/^\d{3}\s+/, '')
+      setError(detail || 'Failed to save changes. Please try again.')
       setSaving(false)
     }
   }
@@ -232,7 +233,10 @@ export default function MealPlanDetailPage({ editMode = false }: { editMode?: bo
                 {entries.map(entry => (
                   <div key={entry.id} className="meal-entry">
                     <span className="meal-entry__label">{mealLabel(entry)}</span>
-                    <span className="meal-entry__detail">{slotDetail(entry)}</span>
+                    <span className="meal-entry__detail">
+                      {slotDetail(entry)}
+                      {entry.leftoverSlug && <span className="leftover-chip">leftover</span>}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -245,6 +249,11 @@ export default function MealPlanDetailPage({ editMode = false }: { editMode?: bo
 
   // ---- Edit mode ----
   const editDays = Array.from({ length: draftDuration }, (_, i) => i + 1)
+
+  // Exclude this plan's own DB leftovers — computeAvailableLeftovers derives them from draftSlots instead.
+  const availableLeftovers = computeAvailableLeftovers(
+    draftSlots, recipes, leftovers.filter(l => l.sourcePlanId !== plan.id)
+  )
 
   return (
     <div>
@@ -285,6 +294,7 @@ export default function MealPlanDetailPage({ editMode = false }: { editMode?: bo
                   <SlotEditor
                     slot={slot}
                     recipes={recipes}
+                    leftovers={availableLeftovers}
                     onChange={patch => updateDraftSlot(slot.key, patch)}
                     onRemove={() => removeDraftSlot(slot.key)}
                   />

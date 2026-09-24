@@ -45,6 +45,8 @@ public class MealPlanEntry {
     private String recipeSlug;
     private String recipeName;
     private Integer servings;
+    private String leftoverSlug;
+    private Long leftoverSourcePlanId;
     private String productName;
     private String quantity;
 

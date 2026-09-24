@@ -8,6 +8,7 @@ export default function MealPlanListPage() {
   const [plans, setPlans] = useState<MealPlan[]>([])
   const [loading, setLoading] = useState(true)
   const [pendingDelete, setPendingDelete] = useState<MealPlan | null>(null)
+  const [deleteError, setDeleteError] = useState('')
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -17,8 +18,15 @@ export default function MealPlanListPage() {
   }, [])
 
   async function handleDelete(plan: MealPlan) {
-    await mealPlansApi.delete(plan.id)
-    setPlans(prev => prev.filter(p => p.id !== plan.id))
+    try {
+      await mealPlansApi.delete(plan.id)
+      setPlans(prev => prev.filter(p => p.id !== plan.id))
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : ''
+      setDeleteError(msg.startsWith('409')
+        ? msg.substring(4).trim()
+        : 'Failed to delete plan. Please try again.')
+    }
     setPendingDelete(null)
   }
 
@@ -34,6 +42,8 @@ export default function MealPlanListPage() {
           </button>
         </div>
       </div>
+
+      {deleteError && <p className="error-text">{deleteError}</p>}
 
       {plans.length === 0 ? (
         <p className="empty-state">No meal plans yet.</p>
@@ -51,9 +61,9 @@ export default function MealPlanListPage() {
                 <td className="list-item-name">{plan.name}</td>
                 <td>
                   <div className="page-header__actions plan-row-actions">
-                    <button className="btn btn--secondary" onClick={() => navigate(`/meal-plan/${plan.id}`)}>Open</button>
-                    <button className="btn btn--secondary" onClick={() => navigate(`/meal-plan/${plan.id}/edit`)}>Edit</button>
-                    <button className="btn btn--danger" onClick={() => setPendingDelete(plan)}>Delete</button>
+                    <button className="btn btn--secondary" onClick={() => { setDeleteError(''); navigate(`/meal-plan/${plan.id}`) }}>Open</button>
+                    <button className="btn btn--secondary" onClick={() => { setDeleteError(''); navigate(`/meal-plan/${plan.id}/edit`) }}>Edit</button>
+                    <button className="btn btn--danger" onClick={() => { setDeleteError(''); setPendingDelete(plan) }}>Delete</button>
                   </div>
                 </td>
               </tr>
@@ -67,7 +77,7 @@ export default function MealPlanListPage() {
           message="This will permanently remove the meal plan and cannot be undone."
           confirmLabel="Delete"
           onConfirm={() => handleDelete(pendingDelete)}
-          onCancel={() => setPendingDelete(null)}
+          onCancel={() => { setDeleteError(''); setPendingDelete(null) }}
         />
       )}
     </div>

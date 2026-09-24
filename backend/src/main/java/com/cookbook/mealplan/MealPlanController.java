@@ -42,6 +42,12 @@ public class MealPlanController {
         return ResponseEntity.noContent().build();
     }
 
+    @PutMapping("/{planId}/entries")
+    public ResponseEntity<Void> replaceEntries(@PathVariable Long planId, @RequestBody List<MealPlanEntry> entries) {
+        service.replaceEntries(planId, entries);
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/{id}/entries")
     public ResponseEntity<MealPlanEntry> addEntry(@PathVariable Long id, @RequestBody MealPlanEntry entry) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.addEntry(id, entry));

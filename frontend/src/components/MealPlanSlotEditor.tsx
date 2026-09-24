@@ -1,4 +1,5 @@
 import { MEAL_TYPES, Recipe } from '../api/client'
+import { AvailableLeftover } from '../utils/leftovers'
 import RecipePicker from './RecipePicker'
 import './MealPlanSlotEditor.css'
 
@@ -12,6 +13,8 @@ export type SlotDraft = {
   mealName: string
   slotType: SlotType
   recipeSlug: string
+  leftoverSlug?: string
+  leftoverSourcePlanId?: number
   servings: number
   productName: string
   quantity: string
@@ -45,9 +48,10 @@ export function sortedDrafts(slots: SlotDraft[]): SlotDraft[] {
   })
 }
 
-export function SlotEditor({ slot, recipes, onChange, onRemove }: {
+export function SlotEditor({ slot, recipes, leftovers, onChange, onRemove }: {
   slot: SlotDraft
   recipes: Recipe[]
+  leftovers: AvailableLeftover[]
   onChange: (patch: Partial<SlotDraft>) => void
   onRemove: () => void
 }) {
@@ -70,6 +74,10 @@ export function SlotEditor({ slot, recipes, onChange, onRemove }: {
         const newType = e.target.value as SlotType
         const patch: Partial<SlotDraft> = { slotType: newType }
         if (newType === 'READY_PRODUCT' && !slot.quantity) patch.quantity = '1'
+        if (newType !== 'RECIPE') {
+          patch.leftoverSlug = undefined
+          patch.leftoverSourcePlanId = undefined
+        }
         onChange(patch)
       }}>
         <option value="RECIPE">Recipe</option>
@@ -79,11 +87,16 @@ export function SlotEditor({ slot, recipes, onChange, onRemove }: {
 
       {slot.slotType === 'RECIPE' && (
         <>
-          <RecipePicker
-            recipes={recipes}
-            value={slot.recipeSlug}
-            onChange={slug => onChange({ recipeSlug: slug })}
-          />
+          <div className="slot-editor__recipe-group">
+            <RecipePicker
+              recipes={recipes}
+              leftovers={leftovers}
+              value={slot.recipeSlug}
+              leftoverSlug={slot.leftoverSlug}
+              onChange={(slug, leftoverSlug, leftoverSourcePlanId) => onChange({ recipeSlug: slug, leftoverSlug, leftoverSourcePlanId })}
+            />
+            {slot.leftoverSlug && <span className="leftover-chip">leftover</span>}
+          </div>
           <label className="slot-editor__servings-label">
             Servings
             <input

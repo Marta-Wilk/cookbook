@@ -103,7 +103,7 @@ cd backend
 JAVA_HOME=$JAVA21_HOME mvn spring-boot:run
 ```
 - API: http://localhost:8080/api
-- H2 console: http://localhost:8080/h2-console (JDBC URL: `jdbc:h2:mem:cookbookdb`)
+- H2 console: http://localhost:8080/h2-console (JDBC URL: `jdbc:h2:file:../cookbookdb`)
 
 ### Frontend
 ```bash

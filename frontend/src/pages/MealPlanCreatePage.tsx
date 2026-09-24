@@ -1,19 +1,20 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { MEAL_TYPES, MealPlan, MealPlanEntry, Recipe, mealPlansApi, recipesApi } from '../api/client'
+import { Leftover, MEAL_TYPES, MealPlan, MealPlanEntry, Recipe, leftoversApi, mealPlansApi, recipesApi } from '../api/client'
 import { SlotDraft, nextKey, generatePlanName, formatDayHeader, SlotEditor, InsertDivider } from '../components/MealPlanSlotEditor'
+import { computeAvailableLeftovers, computeCrossPlanUpdates } from '../utils/leftovers'
 import './MealPlanCreatePage.css'
 
 type DayDraft = { dayIndex: number; slots: SlotDraft[] }
 
-function makeSlot(mealType: string): SlotDraft {
-  return { key: nextKey(), dayIndex: 0, mealType, mealName: '', slotType: 'RECIPE', recipeSlug: '', servings: 1, productName: '', quantity: '' }
+function makeSlot(mealType: string, dayIndex: number): SlotDraft {
+  return { key: nextKey(), dayIndex, mealType, mealName: '', slotType: 'RECIPE', recipeSlug: '', servings: 1, productName: '', quantity: '' }
 }
 
 function makeDays(durationDays: number): DayDraft[] {
   return Array.from({ length: durationDays }, (_, i) => ({
     dayIndex: i + 1,
-    slots: [makeSlot('BREAKFAST'), makeSlot('LUNCH'), makeSlot('DINNER')],
+    slots: [makeSlot('BREAKFAST', i + 1), makeSlot('LUNCH', i + 1), makeSlot('DINNER', i + 1)],
   }))
 }
 
@@ -40,6 +41,7 @@ export default function MealPlanCreatePage() {
   const [durationDays, setDurationDays] = useState(7)
   const [days, setDays] = useState<DayDraft[]>([])
   const [recipes, setRecipes] = useState<Recipe[]>([])
+  const [leftovers, setLeftovers] = useState<Leftover[]>([])
   const [existingPlans, setExistingPlans] = useState<MealPlan[]>([])
   const [createdPlanId, setCreatedPlanId] = useState<number | null>(null)
   const [error, setError] = useState('')
@@ -47,8 +49,8 @@ export default function MealPlanCreatePage() {
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
-    Promise.all([recipesApi.getAll(), mealPlansApi.getAll()])
-      .then(([r, p]) => { setRecipes(r); setExistingPlans(p) })
+    Promise.all([recipesApi.getAll(), mealPlansApi.getAll(), leftoversApi.getAll()])
+      .then(([r, p, l]) => { setRecipes(r); setExistingPlans(p); setLeftovers(l) })
   }, [])
 
   async function handleConfirm() {
@@ -97,7 +99,7 @@ export default function MealPlanCreatePage() {
     const day = days.find(d => d.dayIndex === dayIndex)!
     const used = new Set(day.slots.map(s => s.mealType))
     const mealType = MEAL_TYPES.find(t => !used.has(t)) ?? 'OTHER'
-    const slot = makeSlot(mealType)
+    const slot = makeSlot(mealType, dayIndex)
     setDays(prev => prev.map(d => {
       if (d.dayIndex !== dayIndex) return d
       const slots = [...d.slots]
@@ -111,18 +113,29 @@ export default function MealPlanCreatePage() {
     setSubmitting(true)
     setError('')
     try {
-      for (const day of days) {
-        for (const slot of day.slots) {
-          const entry: Omit<MealPlanEntry, 'id'> = {
-            dayIndex: day.dayIndex,
-            mealType: slot.mealType,
-            ...(slot.mealType === 'OTHER' && { mealName: slot.mealName }),
-            slotType: slot.slotType,
-            ...(slot.slotType === 'RECIPE' && { recipeSlug: slot.recipeSlug || recipes[0]?.slug, servings: slot.servings }),
-            ...(slot.slotType === 'READY_PRODUCT' && { productName: slot.productName, quantity: slot.quantity }),
-          }
-          await mealPlansApi.addEntry(createdPlanId, entry)
-        }
+      const flatSlots = days.flatMap(d => d.slots)
+      const entries: Omit<MealPlanEntry, 'id'>[] = flatSlots
+        .filter(s => !(s.slotType === 'RECIPE' && !s.recipeSlug))
+        .map(slot => ({
+          dayIndex: slot.dayIndex,
+          mealType: slot.mealType,
+          ...(slot.mealType === 'OTHER' && { mealName: slot.mealName }),
+          slotType: slot.slotType,
+          ...(slot.slotType === 'RECIPE' && {
+            recipeSlug: slot.recipeSlug,
+            servings: slot.servings,
+            ...(slot.leftoverSlug && { leftoverSlug: slot.leftoverSlug }),
+            ...(slot.leftoverSourcePlanId !== undefined && { leftoverSourcePlanId: slot.leftoverSourcePlanId }),
+          }),
+          ...(slot.slotType === 'READY_PRODUCT' && { productName: slot.productName, quantity: slot.quantity }),
+        }))
+      await mealPlansApi.replaceEntries(createdPlanId, entries)
+      const allAvailable = computeAvailableLeftovers(flatSlots, recipes, leftovers)
+      const ownLeftovers = allAvailable.filter(l => l.sourcePlanId === undefined)
+      await leftoversApi.replaceForPlan(createdPlanId, ownLeftovers)
+      const crossPlanUpdates = computeCrossPlanUpdates(flatSlots, leftovers)
+      for (const [sourcePlanId, updatedList] of crossPlanUpdates) {
+        await leftoversApi.replaceForPlan(sourcePlanId, updatedList)
       }
       navigate(`/meal-plan/${createdPlanId}`)
     } catch {
@@ -181,25 +194,30 @@ export default function MealPlanCreatePage() {
         <button className="btn btn--ghost btn--sm" onClick={() => setStep(1)}>← Change dates</button>
       </p>
 
-      {days.map(day => (
-        <div key={day.dayIndex} className="create-day-block">
-          <h3>Day {day.dayIndex} — {formatDayHeader(startDate, day.dayIndex)}</h3>
+      {days.map(day => {
+        const flatSlots = days.flatMap(d => d.slots)
+        const availableLeftovers = computeAvailableLeftovers(flatSlots, recipes, leftovers)
+        return (
+          <div key={day.dayIndex} className="create-day-block">
+            <h3>Day {day.dayIndex} — {formatDayHeader(startDate, day.dayIndex)}</h3>
 
-          <InsertDivider onClick={() => insertSlotAt(day.dayIndex, 0)} />
+            <InsertDivider onClick={() => insertSlotAt(day.dayIndex, 0)} />
 
-          {day.slots.map((slot, idx) => (
-            <div key={slot.key}>
-              <SlotEditor
-                slot={slot}
-                recipes={recipes}
-                onChange={patch => updateSlot(day.dayIndex, slot.key, patch)}
-                onRemove={() => removeSlot(day.dayIndex, slot.key)}
-              />
-              <InsertDivider onClick={() => insertSlotAt(day.dayIndex, idx + 1)} />
-            </div>
-          ))}
-        </div>
-      ))}
+            {day.slots.map((slot, idx) => (
+              <div key={slot.key}>
+                <SlotEditor
+                  slot={slot}
+                  recipes={recipes}
+                  leftovers={availableLeftovers}
+                  onChange={patch => updateSlot(day.dayIndex, slot.key, patch)}
+                  onRemove={() => removeSlot(day.dayIndex, slot.key)}
+                />
+                <InsertDivider onClick={() => insertSlotAt(day.dayIndex, idx + 1)} />
+              </div>
+            ))}
+          </div>
+        )
+      })}
 
       {error && <p className="error-text">{error}</p>}
 
