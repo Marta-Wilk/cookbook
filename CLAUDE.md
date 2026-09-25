@@ -22,7 +22,10 @@ cookbook/
 │   └── features/
 │       ├── F001-recipe-management.md
 │       ├── F002-meal-planning.md
-│       └── F003-ai-shopping-list.md
+│       ├── F003-ai-shopping-list.md
+│       ├── F004-database-configuration.md
+│       ├── F005-recipe-import.md
+│       └── F006-leftovers.md
 └── recipes/              Sample recipes in the project text format
 ```
 
@@ -44,7 +47,7 @@ cookbook/
 
 ## Backend conventions
 
-**Tech stack:** Java 21, Spring Boot 3.3.x, Spring Data JPA, PostgreSQL, Lombok, JUnit 5 (H2 for tests only)
+**Tech stack:** Java 21, Spring Boot 3.3.x, Spring Data JPA, PostgreSQL, Lombok, JUnit 5 (H2 file-based for local dev fallback; H2 in-memory for tests)
 
 **Package structure:** `com.cookbook.<feature>` — one package per domain
 
@@ -74,7 +77,7 @@ cookbook/
 
 ## Frontend conventions
 
-**Tech stack:** React 18, TypeScript, Vite 5, React Router DOM v6
+**Tech stack:** React 18, TypeScript, Vite 8, React Router DOM v6
 
 **File layout:**
 ```
@@ -122,6 +125,7 @@ Without it the service returns a stub demo response — fine for local dev.
 
 - When creating a PR, use the current working branch as the head branch and `main` as the base branch unless the user explicitly specifies otherwise.
 - Never close, merge, or delete a PR unless explicitly instructed.
+- Before creating a PR for any branch that adds or modifies a feature spec, check `CLAUDE.md`, `README.md`, and `specifications/architecture.md` for discrepancies with the updated requirements (missing features, outdated tech versions, incorrect data model or package descriptions) and fix them before opening the PR.
 - `gh` CLI is **not installed** — use the GitHub API directly via PowerShell `Invoke-RestMethod`. Retrieve the token with `printf 'protocol=https\nhost=github.com\n' | git credential fill` (run in Bash), then call `https://api.github.com/repos/Marta-Wilk/cookbook/...`.
 
 ## CI / Quality gate
@@ -135,4 +139,4 @@ PRs cannot be merged until both checks pass and a reviewer approves.
 ## Recipe text format
 
 See `specifications/recipe-format.md` for the full spec.
-Sample files are in `recipes/`. The `content` field of a `Recipe` entity stores the full Markdown.
+Sample files are in `recipes/`. Recipe content is stored as `recipes/<slug>.md` on disk — the DB holds metadata only (no `content` column).
