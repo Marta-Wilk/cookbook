@@ -60,6 +60,16 @@ class ShoppingListControllerTest {
                 .andExpect(jsonPath("$.items.length()").value(2));
     }
 
+    // Shopping list already exists for plan → POST returns 409
+    @Test
+    void generate_listAlreadyExists_returns409() throws Exception {
+        when(service.generateForMealPlan(anyLong()))
+                .thenThrow(new ResponseStatusException(HttpStatus.CONFLICT, "A shopping list already exists for this plan."));
+
+        mockMvc.perform(post("/api/shopping-lists/generate/1"))
+                .andExpect(status().isConflict());
+    }
+
     // Holdout 2: Missing meal plan → POST returns 404
     @Test
     void generate_missingMealPlan_returns404() throws Exception {
@@ -107,6 +117,29 @@ class ShoppingListControllerTest {
         mockMvc.perform(get("/api/shopping-lists/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.items[0].owned").value(true));
+    }
+
+    // Regenerate: POST /{id}/regenerate returns updated list with status ACTIVE
+    @Test
+    void regenerate_returnsUpdatedListWithActiveStatus() throws Exception {
+        ShoppingList regenerated = stubList(item(1L, "500g minced beef", 0));
+        regenerated.setStatus("ACTIVE");
+        when(service.regenerate(1L)).thenReturn(regenerated);
+
+        mockMvc.perform(post("/api/shopping-lists/1/regenerate"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.status").value("ACTIVE"));
+    }
+
+    // Regenerate: missing list → 404
+    @Test
+    void regenerate_missingList_returns404() throws Exception {
+        when(service.regenerate(anyLong()))
+                .thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "Shopping list not found: 99"));
+
+        mockMvc.perform(post("/api/shopping-lists/99/regenerate"))
+                .andExpect(status().isNotFound());
     }
 
     // Holdout 6: DELETE list → GET returns 404

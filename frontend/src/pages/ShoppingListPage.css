@@ -5,3 +5,27 @@
 .shopping-list-meta {
   color: var(--muted);
 }
+
+.status-badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  margin-left: 0.55rem;
+  vertical-align: middle;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.status-badge--outdated {
+  background: #fff3cd;
+  color: #7a5800;
+  border: 1px solid #e0c06a;
+}
+
+.status-badge--deleted {
+  background: #fde8e8;
+  color: #9b1c1c;
+  border: 1px solid #f5a5a5;
+}

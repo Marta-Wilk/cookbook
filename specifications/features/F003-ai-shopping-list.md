@@ -8,7 +8,7 @@ saved, updated (items marked as owned), and deleted when shopping is done.
 ## Acceptance criteria
 
 ### Generation
-1. `POST /api/shopping-lists/generate/{mealPlanId}` generates and persists a shopping list
+1. `POST /api/shopping-lists/generate/{mealPlanId}` generates and persists a shopping list; only one shopping list may exist per meal plan — if one already exists, the endpoint returns HTTP 409 CONFLICT
 2. RECIPE entries: ingredients extracted from the recipe file and sent to the LLM
 3. READY_PRODUCT entries: added to the list directly (name + quantity), no LLM processing
 4. EAT_OUT entries: excluded from the list entirely
@@ -27,16 +27,22 @@ saved, updated (items marked as owned), and deleted when shopping is done.
 10. `PATCH /api/shopping-lists/{id}/items/{itemId}` toggles the `owned` flag on an item
 11. `DELETE /api/shopping-lists/{id}` removes the list and all its items; returns 204
 
+### Deprecation
+12. When the source meal plan is **deleted**, all shopping lists linked to it are marked `DEPRECATED_PLAN_DELETED`
+13. When the source meal plan is **edited** (header fields, entries added/removed/replaced), all shopping lists linked to it are marked `DEPRECATED_PLAN_EDITED`
+14. `POST /api/shopping-lists/{id}/regenerate` re-runs generation in place on a `DEPRECATED_PLAN_EDITED` list: clears existing items, rebuilds from the current plan, resets status to `ACTIVE`; returns the updated list
+
 ## Data model
 
 ### ShoppingList
 
-| Field       | Type      | Notes                                    |
-|-------------|-----------|------------------------------------------|
-| id          | Long      | auto-generated                           |
-| name        | String    | defaults to meal plan name + date        |
-| mealPlanId  | Long      | reference to source plan (not a FK)      |
-| createdAt   | DateTime  | set on insert                            |
+| Field       | Type      | Notes                                                                 |
+|-------------|-----------|-----------------------------------------------------------------------|
+| id          | Long      | auto-generated                                                        |
+| name        | String    | defaults to meal plan name + date                                     |
+| mealPlanId  | Long      | reference to source plan (not a FK)                                   |
+| status      | String    | `ACTIVE` (default), `DEPRECATED_PLAN_EDITED`, `DEPRECATED_PLAN_DELETED` |
+| createdAt   | DateTime  | set on insert                                                         |
 
 ### ShoppingListItem
 
@@ -106,6 +112,17 @@ It displays:
 - When the list was generated in stub mode, a notice is shown informing the user that AI
   processing was unavailable: items may be duplicated, quantities are not summed, and
   there is no category grouping
+
+#### Deprecated state
+When a shopping list is deprecated, a warning banner is shown above the items:
+
+- `DEPRECATED_PLAN_EDITED`: "The meal plan has been edited since this list was generated."
+  The page shows a **Regenerate** button alongside **Delete**. Clicking **Regenerate** calls
+  the regenerate endpoint, replaces items in place, and dismisses the banner.
+- `DEPRECATED_PLAN_DELETED`: "The source meal plan has been deleted."
+  The page shows only a **Delete** button (no **Regenerate**).
+
+The Shopping Lists overview shows a status badge next to the list name for deprecated lists.
 
 ### Print
 The shopping list detail view includes a **Print** button in the page header actions.

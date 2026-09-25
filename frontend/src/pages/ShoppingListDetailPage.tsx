@@ -19,6 +19,7 @@ export default function ShoppingListDetailPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [regenerating, setRegenerating] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
 
   useEffect(() => {
@@ -53,6 +54,18 @@ export default function ShoppingListDetailPage() {
     }
   }
 
+  async function handleRegenerate() {
+    if (!list) return
+    setRegenerating(true)
+    try {
+      const updated = await shoppingListApi.regenerate(list.id)
+      setList(updated)
+      setItems(updated.items.map(item => ({ ...item, ownedLocal: item.owned })))
+    } finally {
+      setRegenerating(false)
+    }
+  }
+
   async function handleDelete() {
     if (!list) return
     setDeleting(true)
@@ -66,8 +79,6 @@ export default function ShoppingListDetailPage() {
 
   if (loading) return <p>Loading…</p>
   if (!list) return null
-
-  const isDirty = items.some(it => it.ownedLocal !== it.owned)
 
   const groups = items.reduce<Record<string, { item: LocalItem; index: number }[]>>((acc, item, i) => {
     const cat = item.category ?? 'Other'
@@ -87,10 +98,15 @@ export default function ShoppingListDetailPage() {
         <h1 className="page-header__title">Shopping List — {list.name}</h1>
         <div className="page-header__actions">
           <button className="btn btn--secondary" onClick={() => navigate('/shopping-list')}>← Back</button>
-          <button className="btn btn--primary" onClick={handleSave} disabled={saving || !isDirty}>
+          <button className="btn btn--primary" onClick={handleSave} disabled={saving}>
             {saving ? 'Saving…' : 'Save'}
           </button>
           <button className="btn btn--secondary" onClick={() => window.print()}>Print</button>
+          {list.status === 'DEPRECATED_PLAN_EDITED' && (
+            <button className="btn btn--primary" onClick={handleRegenerate} disabled={regenerating}>
+              {regenerating ? 'Regenerating…' : 'Regenerate'}
+            </button>
+          )}
           <button className="btn btn--danger" onClick={() => setConfirmDelete(true)} disabled={deleting}>
             Delete
           </button>
@@ -102,6 +118,20 @@ export default function ShoppingListDetailPage() {
           <strong>AI generation unavailable</strong> — Anthropic API key is not configured.
           {' '}This list was built directly from your plan entries without AI processing: ingredients may be
           duplicated across recipes, quantities are not summed, and items are not grouped by category.
+        </div>
+      )}
+
+      {list.status === 'DEPRECATED_PLAN_EDITED' && (
+        <div className="alert alert--warning">
+          <strong>Outdated</strong> — The meal plan has been edited since this list was generated.
+          {' '}Use <strong>Regenerate</strong> to rebuild it from the current plan entries.
+        </div>
+      )}
+
+      {list.status === 'DEPRECATED_PLAN_DELETED' && (
+        <div className="alert alert--danger">
+          <strong>Plan deleted</strong> — The source meal plan no longer exists.
+          {' '}You can keep this list for reference or delete it.
         </div>
       )}
 

@@ -35,6 +35,11 @@ public class ShoppingListController {
         return service.toggleOwned(id, itemId);
     }
 
+    @PostMapping("/{id}/regenerate")
+    public ShoppingList regenerate(@PathVariable Long id) {
+        return service.regenerate(id);
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.delete(id);
