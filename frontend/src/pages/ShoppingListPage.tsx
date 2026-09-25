@@ -38,7 +38,15 @@ export default function ShoppingListPage() {
                 className="shopping-list-row"
                 onClick={() => navigate(`/shopping-list/${list.id}`)}
               >
-                <td className="list-item-name">{list.name}</td>
+                <td className="list-item-name">
+                  {list.name}
+                  {list.status === 'DEPRECATED_PLAN_EDITED' && (
+                    <span className="status-badge status-badge--outdated">Outdated</span>
+                  )}
+                  {list.status === 'DEPRECATED_PLAN_DELETED' && (
+                    <span className="status-badge status-badge--deleted">Plan deleted</span>
+                  )}
+                </td>
                 <td className="shopping-list-meta">
                   {new Date(list.createdAt).toLocaleDateString()}
                 </td>

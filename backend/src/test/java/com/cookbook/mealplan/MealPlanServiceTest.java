@@ -3,6 +3,8 @@ package com.cookbook.mealplan;
 import com.cookbook.leftover.LeftoverService;
 import com.cookbook.recipe.Recipe;
 import com.cookbook.recipe.RecipeRepository;
+import com.cookbook.shoppinglist.ShoppingList;
+import com.cookbook.shoppinglist.ShoppingListRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -25,6 +27,7 @@ class MealPlanServiceTest {
     @Mock MealPlanEntryRepository entryRepository;
     @Mock RecipeRepository recipeRepository;
     @Mock LeftoverService leftoverService;
+    @Mock ShoppingListRepository shoppingListRepository;
 
     @InjectMocks MealPlanService service;
 

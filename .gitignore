@@ -41,4 +41,5 @@ Thumbs.db
 
 # ---- Presentation ----
 *.pptx
+*.svg
 make_pptx.ps1

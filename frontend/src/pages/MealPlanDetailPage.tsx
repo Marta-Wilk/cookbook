@@ -59,6 +59,7 @@ export default function MealPlanDetailPage({ editMode = false }: { editMode?: bo
   // Shopping list generation state
   const [generating, setGenerating] = useState(false)
   const [eatOutMessage, setEatOutMessage] = useState('')
+  const [listExistsConflict, setListExistsConflict] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -137,6 +138,7 @@ export default function MealPlanDetailPage({ editMode = false }: { editMode?: bo
     if (!plan) return
     setGenerating(true)
     setEatOutMessage('')
+    setListExistsConflict(false)
     try {
       const result = await shoppingListApi.generate(plan.id)
       if (result) {
@@ -144,8 +146,12 @@ export default function MealPlanDetailPage({ editMode = false }: { editMode?: bo
       } else {
         setEatOutMessage('For this plan there is no products to buy, you planned to eat out.')
       }
-    } catch {
-      setEatOutMessage('Failed to generate shopping list. Please try again.')
+    } catch (err) {
+      if (err instanceof Error && err.message.startsWith('409')) {
+        setListExistsConflict(true)
+      } else {
+        setEatOutMessage('Failed to generate shopping list. Please try again.')
+      }
     } finally {
       setGenerating(false)
     }
@@ -215,6 +221,13 @@ export default function MealPlanDetailPage({ editMode = false }: { editMode?: bo
 
         {eatOutMessage && (
           <p className="eat-out-message">{eatOutMessage}</p>
+        )}
+
+        {listExistsConflict && (
+          <p className="eat-out-message">
+            A shopping list already exists for this plan.{' '}
+            <button className="btn-link" onClick={() => navigate('/shopping-list')}>View Shopping Lists</button>
+          </p>
         )}
 
         {days.map(dayIndex => {

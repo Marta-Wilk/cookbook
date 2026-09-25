@@ -12,12 +12,13 @@ or entering a ready-made product for each day + meal-type slot.
 1. `GET /api/meal-plans` lists all meal plans
 2. `POST /api/meal-plans` creates a plan with `name`, `startDate`, and `durationDays` (1–7)
 3. `GET /api/meal-plans/{id}` returns the plan with all entries and recipe details
-4. `PUT /api/meal-plans/{id}` updates name, startDate, durationDays
-5. `DELETE /api/meal-plans/{id}` removes the plan and all its entries; returns 204
-6. `POST /api/meal-plans/{id}/entries` adds an entry (see slot types below)
-7. `DELETE /api/meal-plans/{planId}/entries/{entryId}` removes a single entry
+4. `PUT /api/meal-plans/{id}` updates name, startDate, durationDays; marks any linked shopping lists as `DEPRECATED_PLAN_EDITED`
+5. `DELETE /api/meal-plans/{id}` removes the plan and all its entries; marks any linked shopping lists as `DEPRECATED_PLAN_DELETED`; returns 204
+6. `POST /api/meal-plans/{id}/entries` adds an entry (see slot types below); marks any linked shopping lists as `DEPRECATED_PLAN_EDITED`
+7. `DELETE /api/meal-plans/{planId}/entries/{entryId}` removes a single entry; marks any linked shopping lists as `DEPRECATED_PLAN_EDITED`
 8. `durationDays` outside 1–7 → HTTP 400
 9. Removal of plan and its entries should be transactional operation.
+10. `PUT /api/meal-plans/{planId}/entries` (replace all entries) marks any linked shopping lists as `DEPRECATED_PLAN_EDITED`
 
 ### FRONTEND
 
@@ -31,6 +32,7 @@ or entering a ready-made product for each day + meal-type slot.
 3. **Meal Plan Details** page shows the plan with all its entries; available from 'Meals Plans' list item. The page includes a **Generate Shopping List** button:
    - On success (HTTP 200): navigates to the generated shopping list view
    - On HTTP 204: displays the message *"For this plan there is no products to buy, you planned to eat out."* inline on the page
+   - On HTTP 409: displays the message *"A shopping list already exists for this plan."* with a **View Shopping Lists** link that navigates to the Shopping Lists overview
 4. Edit button will open Meal Plan Details page in edit mode to allow users modifications
 5. Delete button - triggers additional pop-up with question 
    > "Are you sure you want to remove this plan? This operation cannot be undone."

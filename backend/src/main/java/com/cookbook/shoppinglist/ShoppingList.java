@@ -24,6 +24,8 @@ public class ShoppingList {
 
     private boolean stubMode;
 
+    private String status = "ACTIVE";
+
     @Column(updatable = false)
     private LocalDateTime createdAt;
 

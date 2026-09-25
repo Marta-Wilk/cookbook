@@ -2,6 +2,7 @@ package com.cookbook.mealplan;
 
 import com.cookbook.leftover.LeftoverService;
 import com.cookbook.recipe.RecipeRepository;
+import com.cookbook.shoppinglist.ShoppingListRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ public class MealPlanService {
     private final MealPlanEntryRepository entryRepository;
     private final RecipeRepository recipeRepository;
     private final LeftoverService leftoverService;
+    private final ShoppingListRepository shoppingListRepository;
 
     public List<MealPlan> findAll() {
         return repository.findAll();
@@ -43,7 +45,9 @@ public class MealPlanService {
         existing.setName(patch.getName());
         existing.setStartDate(patch.getStartDate());
         existing.setDurationDays(patch.getDurationDays());
-        return repository.save(existing);
+        MealPlan saved = repository.save(existing);
+        deprecateShoppingList(id, "DEPRECATED_PLAN_EDITED");
+        return saved;
     }
 
     @Transactional
@@ -63,6 +67,7 @@ public class MealPlanService {
                     "that come from this plan, then try deleting again.");
         }
         leftoverService.deleteAllByPlan(id);
+        deprecateShoppingList(id, "DEPRECATED_PLAN_DELETED");
         repository.deleteById(id);
     }
 
@@ -112,7 +117,9 @@ public class MealPlanService {
         entryRepository.deleteByMealPlanIdAndDayIndexAndMealType(planId, entry.getDayIndex(), entry.getMealType());
 
         entry.setMealPlan(plan);
-        return entryRepository.save(entry);
+        MealPlanEntry saved = entryRepository.save(entry);
+        deprecateShoppingList(planId, "DEPRECATED_PLAN_EDITED");
+        return saved;
     }
 
     @Transactional
@@ -152,6 +159,7 @@ public class MealPlanService {
             entry.setMealPlan(plan);
             entryRepository.save(entry);
         }
+        deprecateShoppingList(planId, "DEPRECATED_PLAN_EDITED");
     }
 
     @Transactional
@@ -163,6 +171,14 @@ public class MealPlanService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Entry " + entryId + " not found in plan " + planId);
         }
         entryRepository.deleteById(entryId);
+        deprecateShoppingList(planId, "DEPRECATED_PLAN_EDITED");
+    }
+
+    private void deprecateShoppingList(Long mealPlanId, String status) {
+        shoppingListRepository.findByMealPlanId(mealPlanId).ifPresent(list -> {
+            list.setStatus(status);
+            shoppingListRepository.save(list);
+        });
     }
 
     private void validateDurationDays(int durationDays) {

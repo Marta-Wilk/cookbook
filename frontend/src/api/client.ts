@@ -74,6 +74,7 @@ export interface ShoppingList {
   name: string
   mealPlanId: number
   stubMode: boolean
+  status: string | null
   createdAt: string
   items: ShoppingListItem[]
 }
@@ -138,5 +139,6 @@ export const shoppingListApi = {
   getById: (id: number) => request<ShoppingList>(`/shopping-lists/${id}`),
   toggleOwned: (listId: number, itemId: number) =>
     request<ShoppingListItem>(`/shopping-lists/${listId}/items/${itemId}`, { method: 'PATCH' }),
+  regenerate: (id: number) => request<ShoppingList>(`/shopping-lists/${id}/regenerate`, { method: 'POST' }),
   delete: (id: number) => request<void>(`/shopping-lists/${id}`, { method: 'DELETE' }),
 }

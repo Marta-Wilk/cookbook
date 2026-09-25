@@ -50,7 +50,7 @@ public class AnthropicClient {
 
     public String callRaw(String systemPrompt, String userMessage) {
         var requestBody = new MessagesRequest(
-                model, 2048, systemPrompt,
+                model, 16000, systemPrompt,
                 List.of(new Message("user", userMessage)),
                 List.of());
         try {
@@ -76,7 +76,7 @@ public class AnthropicClient {
 
     public List<ItemDto> generateItems(String userMessage) {
         var requestBody = new MessagesRequest(
-                model, 2048, SYSTEM_PROMPT,
+                model, 16000, SYSTEM_PROMPT,
                 List.of(new Message("user", userMessage)),
                 List.of());
         try {

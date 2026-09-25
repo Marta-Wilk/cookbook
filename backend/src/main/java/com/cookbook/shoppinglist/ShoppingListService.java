@@ -10,6 +10,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -36,6 +38,11 @@ public class ShoppingListService {
 
         if (shoppableEntries.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NO_CONTENT);
+        }
+
+        if (repository.findByMealPlanId(mealPlanId).isPresent()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "A shopping list already exists for this plan.");
         }
 
         if ("stub".equals(apiKey)) {
@@ -67,6 +74,84 @@ public class ShoppingListService {
     public void delete(Long id) {
         findById(id);
         repository.deleteById(id);
+    }
+
+    public void deprecateForPlanDeletion(Long mealPlanId) {
+        repository.findByMealPlanId(mealPlanId).ifPresent(list -> {
+            list.setStatus("DEPRECATED_PLAN_DELETED");
+            repository.save(list);
+        });
+    }
+
+    public void deprecateForPlanEdit(Long mealPlanId) {
+        repository.findByMealPlanId(mealPlanId).ifPresent(list -> {
+            list.setStatus("DEPRECATED_PLAN_EDITED");
+            repository.save(list);
+        });
+    }
+
+    @Transactional
+    public ShoppingList regenerate(Long id) {
+        ShoppingList list = findById(id);
+        MealPlan plan = mealPlanService.findById(list.getMealPlanId());
+
+        List<MealPlanEntry> shoppableEntries = plan.getEntries().stream()
+                .filter(e -> e.getSlotType() != MealPlanEntry.SlotType.EAT_OUT)
+                .filter(e -> e.getLeftoverSlug() == null)
+                .toList();
+
+        list.getItems().clear();
+        list.setName(plan.getName());
+        list.setStatus("ACTIVE");
+
+        if (shoppableEntries.isEmpty()) {
+            list.setStubMode(false);
+            return repository.save(list);
+        }
+
+        if ("stub".equals(apiKey)) {
+            list.setStubMode(true);
+            List<String> rawItems = buildRawItems(shoppableEntries);
+            for (int i = 0; i < rawItems.size(); i++) {
+                ShoppingListItem item = new ShoppingListItem();
+                item.setShoppingList(list);
+                item.setIngredient(rawItems.get(i));
+                item.setSortOrder(i);
+                list.getItems().add(item);
+            }
+        } else {
+            list.setStubMode(false);
+            List<MealPlanEntry> recipeEntries = shoppableEntries.stream()
+                    .filter(e -> e.getSlotType() == MealPlanEntry.SlotType.RECIPE)
+                    .toList();
+            List<MealPlanEntry> readyProducts = shoppableEntries.stream()
+                    .filter(e -> e.getSlotType() == MealPlanEntry.SlotType.READY_PRODUCT)
+                    .toList();
+
+            int sortOrder = 0;
+            if (!recipeEntries.isEmpty()) {
+                String userMessage = buildUserMessage(recipeEntries);
+                for (AnthropicClient.ItemDto dto : anthropicClient.generateItems(userMessage)) {
+                    ShoppingListItem item = new ShoppingListItem();
+                    item.setShoppingList(list);
+                    item.setIngredient(dto.ingredient());
+                    item.setQuantity(dto.quantity());
+                    item.setCategory(dto.category());
+                    item.setSortOrder(sortOrder++);
+                    list.getItems().add(item);
+                }
+            }
+            for (MealPlanEntry entry : readyProducts) {
+                ShoppingListItem item = new ShoppingListItem();
+                item.setShoppingList(list);
+                item.setIngredient(entry.getProductName());
+                item.setQuantity(entry.getQuantity());
+                item.setSortOrder(sortOrder++);
+                list.getItems().add(item);
+            }
+        }
+
+        return repository.save(list);
     }
 
     private ShoppingList persistFromAi(MealPlan plan, List<MealPlanEntry> entries) {
