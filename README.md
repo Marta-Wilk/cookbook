@@ -5,15 +5,19 @@ A personal home cookbook application for managing recipes, planning weekly meals
 ## Features
 
 - **Recipe management** — create, edit, and browse recipes stored as plain Markdown files (portable and readable outside the app)
-- **Meal planning** — assign recipes to day + meal-type slots in a weekly plan
-- **AI shopping list** — consolidates and deduplicates ingredients from a meal plan into a grouped shopping list via the Anthropic API
+- **Recipe search** — filter recipes by name or tag directly on the recipes list page
+- **AI recipe import** — paste raw recipe text and have the Anthropic API parse it into a structured form ready to review and save
+- **Meal planning** — assign recipes, eat-out placeholders, or ready-made products to day + meal-type slots in a flexible 1–7 day plan
+- **Leftover tracking** — surplus servings from a recipe are surfaced in the recipe picker for subsequent slots; net leftovers persist across plans
+- **AI shopping list** — consolidates and deduplicates ingredients from a meal plan into a grouped, categorised shopping list via the Anthropic API
+- **Print shopping list** — print the generated shopping list directly from the browser
 
 ## Tech stack
 
 | Layer | Technology |
 |---|---|
 | Backend | Java 21, Spring Boot 3.3, Spring Data JPA, PostgreSQL |
-| Frontend | React 18, TypeScript, Vite 5, React Router v6 |
+| Frontend | React 18, TypeScript, Vite 8, React Router v6 |
 | AI | Anthropic API (optional — falls back to stub response) |
 | Build | Maven 3.9+ (backend), Node 18+ / npm (frontend) |
 

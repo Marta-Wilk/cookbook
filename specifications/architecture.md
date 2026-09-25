@@ -26,9 +26,11 @@ cookbook/
 ```
 com.cookbook
 ├── CookbookApplication.java
-├── recipe/           Recipe metadata index, file-based content storage
+├── config/           DataSourceConfig — PostgreSQL / H2 fallback selection
+├── recipe/           Recipe metadata index, file-based content storage, AI import
 ├── mealplan/         MealPlan + MealPlanEntry, flexible day planner
-└── shoppinglist/     AI-powered generation + persisted list management
+├── shoppinglist/     AI-powered generation + persisted list management
+└── leftover/         Leftover tracking — persistence and plan-scoped API
 ```
 
 ### Database configuration
@@ -68,21 +70,29 @@ On startup, the service syncs any `.md` files in `recipes/` not yet present in t
 ## Frontend
 
 - **Framework:** React 18 with TypeScript
-- **Build tool:** Vite 5
+- **Build tool:** Vite 8
 - **Routing:** React Router DOM v6
 - **API calls:** native `fetch` via `src/api/client.ts`
 - Dev proxy: Vite forwards `/api/*` → `http://localhost:8080`
 
 ## AI Integration
 
-The shopping list feature calls the Anthropic API to consolidate ingredients from a meal plan into a grouped, persisted shopping list.
+Two features call the Anthropic API via a shared `AnthropicClient` bean:
 
-- Service: `com.cookbook.shoppinglist.ShoppingListService`
-- Config key: `ai.anthropic.api-key` (env var `ANTHROPIC_API_KEY`)
-- If key is absent or `stub`, the service returns a hardcoded demo response
-- READY_PRODUCT entries are added to the list directly without calling the LLM
-- EAT_OUT entries are excluded from the list entirely
+**Shopping list generation** (`com.cookbook.shoppinglist.ShoppingListService`)
+- Consolidates recipe ingredients from a meal plan into a grouped, persisted shopping list
+- READY_PRODUCT entries are added directly without calling the LLM
+- EAT_OUT entries and RECIPE entries with `leftoverSlug` set are excluded entirely
 - See `specifications/features/F003-ai-shopping-list.md` for the full prompt spec
+
+**Recipe import** (`com.cookbook.recipe.RecipeImportService`)
+- Parses raw unstructured recipe text into structured fields (name, servings, ingredients, steps, etc.)
+- Returns a draft that pre-fills the Add Recipe form; no new entity is persisted by the import step
+- See `specifications/features/F005-recipe-import.md` for the full prompt spec
+
+**Shared config**
+- Config key: `ai.anthropic.api-key` (env var `ANTHROPIC_API_KEY`)
+- If key is absent or `stub`, both features degrade gracefully to stub mode without making any LLM call
 
 ## Data flow
 
@@ -90,9 +100,10 @@ The shopping list feature calls the Anthropic API to consolidate ingredients fro
 User selects meal plan
   → POST /api/shopping-lists/generate/{mealPlanId}
   → ShoppingListService loads plan entries
-      RECIPE entries   → read ingredients from recipes/<slug>.md → LLM consolidation
-      READY_PRODUCT    → added directly to list
-      EAT_OUT          → skipped
+      RECIPE entries (fresh cook)  → read ingredients from recipes/<slug>.md → LLM consolidation
+      RECIPE entries (leftoverSlug set) → skipped (already cooked, no new ingredients needed)
+      READY_PRODUCT                → added directly to list
+      EAT_OUT                      → skipped
   → ShoppingList + ShoppingListItems persisted to DB
   → User reviews list, marks owned items via PATCH
   → User deletes list when shopping is done via DELETE
