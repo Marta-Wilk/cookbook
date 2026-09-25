@@ -121,9 +121,41 @@ npm run dev
 Set `ANTHROPIC_API_KEY` in your environment.
 Without it the service returns a stub demo response — fine for local dev.
 
+## Branch discipline
+
+Before touching any file:
+
+1. Fetch the latest changes from the remote (no branch switch needed):
+
+```bash
+git fetch origin
+```
+
+2. Check the current branch with `git branch --show-current` and decide how to proceed:
+
+   - **On `main`**: create a new branch from `origin/main` and continue:
+     ```bash
+     git checkout -b feature/<short-description> origin/main
+     # or: git checkout -b fix/<short-description> origin/main
+     ```
+
+   - **On a feature/fix branch whose topic matches the planned changes**: continue working on it as-is.
+
+   - **On a feature/fix branch whose topic does NOT match the planned changes**: warn the user that there are unmerged changes on the current branch that are unrelated to the new task, and ask:
+     > "The current branch `<branch-name>` has unmerged changes unrelated to this task. Would you like to open a PR for those changes first before starting the new work?"
+     - If the user **wants to open a PR first**: help them create the PR, then create a new branch from `origin/main` for the new work.
+     - If the user **does not want a PR now**: create a new branch from `origin/main` for the new work and leave the existing branch untouched:
+       ```bash
+       git checkout -b feature/<short-description> origin/main
+       # or: git checkout -b fix/<short-description> origin/main
+       ```
+       Use `fix/` prefix for bug fixes, `feature/` prefix for new functionality.
+
+Each branch must cover one coherent unit of work — one feature, one fix, one PR.
+
 ## Pull request rules
 
-- When creating a PR, use the current working branch as the head branch and `main` as the base branch unless the user explicitly specifies otherwise.
+- "Use the current working branch as the head branch" means use whatever branch you are on **after** following the branch discipline rule above — it is not permission to skip branch creation.
 - Never close, merge, or delete a PR unless explicitly instructed.
 - Before creating a PR for any branch that adds or modifies a feature spec, check `CLAUDE.md`, `README.md`, and `specifications/architecture.md` for discrepancies with the updated requirements (missing features, outdated tech versions, incorrect data model or package descriptions) and fix them before opening the PR.
 - `gh` CLI is **not installed** — use the GitHub API directly via PowerShell `Invoke-RestMethod`. Retrieve the token with `printf 'protocol=https\nhost=github.com\n' | git credential fill` (run in Bash), then call `https://api.github.com/repos/Marta-Wilk/cookbook/...`.
